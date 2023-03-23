@@ -1,0 +1,46 @@
+﻿@page "/ComparePDF"
+@using System.IO
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Forms
+
+<h3>ComparePDF</h3>
+
+<p>
+    <input type="file" @oninput="OnFileSelectedFirst" accept="application/pdf" />
+    <input type="file" @oninput="OnFileSelectedSecond" accept="application/pdf" />
+</p>
+
+<button @onclick="OnButtonClick">Compare</button>
+
+@code {
+    private string _message = "";
+
+    private void OnButtonClick()
+    {
+        _message = "Button clicked!";
+    }
+
+    private async Task OnFileSelectedFirst(ChangeEventArgs e)
+    {
+        // Get the selected file
+        IReadOnlyList<IBrowserFile> selectedFiles;
+
+        void HandleSelection(InputFileChangeEventArgs eventArgs)
+        {
+            const int MaxAllowedFiles = 5;
+            selectedFiles = eventArgs.GetMultipleFiles(MaxAllowedFiles);
+        }
+    }
+
+    private async Task OnFileSelectedSecond(ChangeEventArgs e)
+    {
+        // Get the selected file
+        IReadOnlyList<IBrowserFile> selectedFiles;
+
+        void HandleSelection(InputFileChangeEventArgs eventArgs)
+        {
+            const int MaxAllowedFiles = 5;
+            selectedFiles = eventArgs.GetMultipleFiles(MaxAllowedFiles);
+        }
+    }
+}

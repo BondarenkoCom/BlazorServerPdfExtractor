@@ -1,0 +1,60 @@
+﻿@page "/ExtractPdf"
+@using System.IO
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Forms
+@using BlazorServerPdfExtractor.Helper
+@inject PdfTextExtractorService _PdfTextExtractorService
+
+<h3>Extract PDF</h3>
+
+<p>
+    <InputFile OnChange="@HandleFileSelected" />
+    <button @onclick="ButtonClicked">Extract PDF</button>
+    <textarea rows="5" cols="40" @bind="MyText"></textarea>
+</p>
+
+@code {
+
+    private string MyText { get; set; }
+    // private string filePath = string.Empty;
+    //PdfTextExtractorService _pdfTextExtractorService;
+
+    // public ExtractPdf(PdfTextExtractorService pdfTextExtractorService)
+    // {
+    //     _pdfTextExtractorService = pdfTextExtractorService;
+    // }
+
+    private async Task HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        string filePath = string.Empty;
+
+        if (file != null)
+        {
+            //var filePath = Path.Combine(@"D:\source\BlazorServerPdfExtractor\BlazorServerPdfExtractor\JsonResults\", file.Name);
+            filePath = Path.Combine(JsonHelper.GetValues().pathFromUser, "example.pdf");
+
+            using (var fileStream = new FileStream(filePath, FileMode.Create))
+            {
+                await file.OpenReadStream().CopyToAsync(fileStream);
+            }
+            MyText = $"{file.Name} - is load ";
+            //send to ButtonClicked(filePath)
+        }
+    }
+
+    private async void ButtonClicked()
+    {
+        string filePath = Path.Combine(JsonHelper.GetValues().pathFromUser, "example.pdf");
+        MyText = $"{filePath} - begin extract";
+
+        try
+        {
+            await _PdfTextExtractorService.ExtractTextFromPDF(filePath);
+        }
+        catch (Exception ex)
+        {
+            MyText = $"Error: {ex.Message}";
+        }
+    }
+}
