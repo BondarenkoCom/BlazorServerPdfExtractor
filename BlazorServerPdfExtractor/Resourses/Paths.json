@@ -3,7 +3,7 @@
   "zipPath": "D:\\source\\BlazorPDFextractor\\BlazorPDFextractor\\JsonResult\\resultFromPDF.zip",
   "targetForResultExtractedJSON": "D:\\source\\BlazorPDFextractor\\BlazorPDFextractor\\JsonResult\\",
   "jsonPath": "D:\\source\\BlazorPDFextractor\\BlazorPDFextractor\\JsonResult\\structuredData.json",
-  "AdobeCredPath": "D:\\source\\BlazorPDFextractor\\PDFServices.NET.SDK.Samples-master\\ExtractTextTableInfoFromPDF\\pdfservices-api-credentials.json",
+  "AdobeCredPath": "D:\\source\\BlazorServerPdfExtractor\\BlazorServerPdfExtractor\\Resourses\\pdfservices-api-credentials.json",
   "logPath": "D:\\source\\BlazorPDFextractor\\BlazorPDFextractor\\Report\\",
   "pathFromUser": "D:\\source\\BlazorServerPdfExtractor\\BlazorServerPdfExtractor\\pdfFiles\\"
 }

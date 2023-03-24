@@ -1,14 +1,16 @@
 ﻿@page "/ExtractPdf"
 @using System.IO
+@using ExtractLibrary
 @using Microsoft.AspNetCore.Components
 @using Microsoft.AspNetCore.Components.Forms
 @using BlazorServerPdfExtractor.Helper
 @inject PdfTextExtractorService _PdfTextExtractorService
+@inject IWebHostEnvironment env
 
 <h3>Extract PDF</h3>
 
 <p>
-    <InputFile OnChange="@HandleFileSelected" />
+    <InputFile OnChange="@HandleFileSelected" MaxFileSize="104857600" />
     <button @onclick="ButtonClicked">Extract PDF</button>
     <textarea rows="5" cols="40" @bind="MyText"></textarea>
 </p>
@@ -16,41 +18,49 @@
 @code {
 
     private string MyText { get; set; }
-    // private string filePath = string.Empty;
-    //PdfTextExtractorService _pdfTextExtractorService;
-
-    // public ExtractPdf(PdfTextExtractorService pdfTextExtractorService)
-    // {
-    //     _pdfTextExtractorService = pdfTextExtractorService;
-    // }
 
     private async Task HandleFileSelected(InputFileChangeEventArgs e)
     {
-        var file = e.File;
-        string filePath = string.Empty;
+        string targetFolderPath = @"D:\source\BlazorServerPdfExtractor\BlazorServerPdfExtractor\JsonResults\";
 
-        if (file != null)
+        IReadOnlyList<IBrowserFile> selectedFiles;
+        selectedFiles = e.GetMultipleFiles();
+
+        foreach (var file in selectedFiles)
         {
-            //var filePath = Path.Combine(@"D:\source\BlazorServerPdfExtractor\BlazorServerPdfExtractor\JsonResults\", file.Name);
-            filePath = Path.Combine(JsonHelper.GetValues().pathFromUser, "example.pdf");
+            var path = $"{targetFolderPath}{file.Name}";
+            FileStream fs = File.Create(path);
 
-            using (var fileStream = new FileStream(filePath, FileMode.Create))
+            // Define the buffer size for reading chunks (1 MB in this example)
+            const int bufferSize = 10 * 1024 * 1024; // 10 MB buffer size
+            byte[] buffer = new byte[bufferSize];
+
+            using (Stream stream = file.OpenReadStream(maxAllowedSize:2000000))
             {
-                await file.OpenReadStream().CopyToAsync(fileStream);
+                int bytesRead;
+                while ((bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length)) > 0)
+                {
+                    await fs.WriteAsync(buffer, 0, bytesRead);
+                }
             }
-            MyText = $"{file.Name} - is load ";
-            //send to ButtonClicked(filePath)
+
+            fs.Close();
         }
+        this.StateHasChanged();
     }
+
 
     private async void ButtonClicked()
     {
-        string filePath = Path.Combine(JsonHelper.GetValues().pathFromUser, "example.pdf");
-        MyText = $"{filePath} - begin extract";
+        
+         string targetFolderPath = @"D:\source\BlazorServerPdfExtractor\BlazorServerPdfExtractor\pdfFiles\health-insurance-application.pdf";
+         MyText = $"{targetFolderPath} - begin extract";
 
         try
         {
-            await _PdfTextExtractorService.ExtractTextFromPDF(filePath);
+            ExtractPDF extractPDF = new ExtractPDF();
+            await extractPDF.ExtractTextFromPDF(targetFolderPath);
+             
         }
         catch (Exception ex)
         {

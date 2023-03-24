@@ -5,6 +5,10 @@ VisualStudioVersion = 17.1.32228.430
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BlazorServerPdfExtractor", "BlazorServerPdfExtractor\BlazorServerPdfExtractor.csproj", "{44B94127-4E30-4AD3-9D34-2AF95E50B19D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExtractLibrary", "ExtractLibrary\ExtractLibrary.csproj", "{04ECAA09-B5E1-4332-960E-2A5F6FDD207A}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ExtractTextTableInfoFromPDF", "PDFServices.NET.SDK.Samples-master\ExtractTextTableInfoFromPDF\ExtractTextTableInfoFromPDF.csproj", "{B105726B-5C4C-4788-AF31-671B23347083}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +19,14 @@ Global
 		{44B94127-4E30-4AD3-9D34-2AF95E50B19D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{44B94127-4E30-4AD3-9D34-2AF95E50B19D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{44B94127-4E30-4AD3-9D34-2AF95E50B19D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{04ECAA09-B5E1-4332-960E-2A5F6FDD207A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{04ECAA09-B5E1-4332-960E-2A5F6FDD207A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{04ECAA09-B5E1-4332-960E-2A5F6FDD207A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{04ECAA09-B5E1-4332-960E-2A5F6FDD207A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B105726B-5C4C-4788-AF31-671B23347083}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B105726B-5C4C-4788-AF31-671B23347083}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B105726B-5C4C-4788-AF31-671B23347083}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B105726B-5C4C-4788-AF31-671B23347083}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

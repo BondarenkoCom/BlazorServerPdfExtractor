@@ -16,4 +16,8 @@
     <Folder Include="pdfFiles\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\ExtractLibrary\ExtractLibrary.csproj" />
+  </ItemGroup>
+
 </Project>
