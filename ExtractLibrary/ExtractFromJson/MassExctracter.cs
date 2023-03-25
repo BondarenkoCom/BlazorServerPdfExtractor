@@ -2,18 +2,12 @@
 using Newtonsoft.Json;
 using NUnit.Framework;
 using SpecFlowPdfReader.Helpers;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ExtractLibrary.ExtractFromJson
 {
     public class MassExctracter
     {
         private string? jsonResut = JsonHelper.GetJsonFile();
-
 
         public string CountTitle()
         {
@@ -23,8 +17,6 @@ namespace ExtractLibrary.ExtractFromJson
 
             try
             {
-                Assert.That(titleElement, Is.Not.Null, "Title element not found");
-                Assert.That(titleElement?.Text, Is.Not.Null.Or.Empty, "Title element text is null or empty");
                 return titleElement?.Text;
             }
             catch (AssertionException ex)
@@ -33,6 +25,5 @@ namespace ExtractLibrary.ExtractFromJson
             }
             return null;
         }
-
     }
 }

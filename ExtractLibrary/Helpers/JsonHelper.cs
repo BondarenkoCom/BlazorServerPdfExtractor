@@ -49,5 +49,15 @@ namespace SpecFlowPdfReader.Helpers
 
             return JsonPath;
         }
+
+        public static string ReportPathName(string path)
+        {
+            string currentDirectory = Directory.GetCurrentDirectory();
+            string JsonPath = Path.Combine(path, "reports", "report.pdf");
+
+            //string JsonPath = Path.Combine(currentDirectory, "Reports", "output.pdf");
+
+            return JsonPath;
+        }
     }
 }

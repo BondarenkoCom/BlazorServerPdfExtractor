@@ -1,7 +1,9 @@
 ﻿@page "/ExtractPdf"
 @using System.IO
+@using DinkToPdf
 @using ExtractLibrary
 @using ExtractLibrary.ExtractFromJson
+@using ExtractLibrary.Helpers
 @using Microsoft.AspNetCore.Components
 @using Microsoft.AspNetCore.Components.Forms
 @using SpecFlowPdfReader.Helpers
@@ -13,7 +15,7 @@
     <InputFile OnChange="@HandleFileSelected" MaxFileSize="104857600" />
     <button @onclick="ButtonClicked">Extract Text</button>
     <button @onclick="GeneratePDFreport" disabled="@(!ViewButtonEnabled)">View</button>
-     <textarea rows="5" cols="40" @bind="MyText"></textarea>
+    <textarea rows="5" cols="40" @bind="MyText"></textarea>
 </p>
 
 @if (IsLoading)
@@ -24,8 +26,8 @@
 {
     <p>Extracting...</p>
 }
-<textarea rows="15" cols="40" @bind="Report"></textarea>
 
+<iframe src="@("/reports/report.pdf")" width="100%" height="800px"></iframe>
 
 @code {
 
@@ -35,6 +37,8 @@
     private bool IsExtracting { get; set; }
     private string FilePath { get; set; }
     private bool ViewButtonEnabled { get; set; }
+    private string pdfSrc { get; set; }
+    private bool IsViewClick { get; set; }
 
     private async Task HandleFileSelected(InputFileChangeEventArgs e)
     {
@@ -100,7 +104,16 @@
     {
         MassExctracter massExctracter = new MassExctracter();
         var titleMess = massExctracter.CountTitle();
-        Report = titleMess;
+        //Report = titleMess;
+
+        GeneratorPDF generatorPDF = new GeneratorPDF();
+
+        string outputPath = JsonHelper.ReportPathName(env.WebRootPath);
+        generatorPDF.GeneratePDFFromTitle(titleMess, outputPath);
+        //Make Refresh Iframe
+        pdfSrc = outputPath; // Update the pdfSrc variable with the output path
+        this.StateHasChanged(); // Trigger a re-render to update the PDF embed
+        //IsViewClick = true;
 
     }
 }
