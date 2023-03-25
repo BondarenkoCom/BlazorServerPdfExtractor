@@ -1,7 +1,6 @@
 {
   "pdfPath": "D:\\source\\SpecFlowReadPdf\\SpecFlowPdfReader\\SpecFlowPdfReader\\PdfFiles\\",
-  "zipPath": "D:\\source\\BlazorPDFextractor\\BlazorPDFextractor\\JsonResult\\resultFromPDF.zip",
-  "targetForResultExtractedJSON": "D:\\source\\BlazorPDFextractor\\BlazorPDFextractor\\JsonResult\\",
+  "targetForResultExtractedJSON": "D:\\source\\BlazorServerPdfExtractor\\BlazorServerPdfExtractor\\JsonResults\\",
   "jsonPath": "D:\\source\\BlazorPDFextractor\\BlazorPDFextractor\\JsonResult\\structuredData.json",
   "AdobeCredPath": "D:\\source\\BlazorServerPdfExtractor\\BlazorServerPdfExtractor\\Resourses\\pdfservices-api-credentials.json",
   "logPath": "D:\\source\\BlazorPDFextractor\\BlazorPDFextractor\\Report\\",

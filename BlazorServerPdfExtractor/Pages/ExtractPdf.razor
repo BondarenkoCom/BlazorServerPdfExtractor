@@ -1,41 +1,61 @@
 ﻿@page "/ExtractPdf"
 @using System.IO
 @using ExtractLibrary
+@using ExtractLibrary.ExtractFromJson
 @using Microsoft.AspNetCore.Components
 @using Microsoft.AspNetCore.Components.Forms
-@using BlazorServerPdfExtractor.Helper
-@inject PdfTextExtractorService _PdfTextExtractorService
+@using SpecFlowPdfReader.Helpers
 @inject IWebHostEnvironment env
 
 <h3>Extract PDF</h3>
 
 <p>
     <InputFile OnChange="@HandleFileSelected" MaxFileSize="104857600" />
-    <button @onclick="ButtonClicked">Extract PDF</button>
-    <textarea rows="5" cols="40" @bind="MyText"></textarea>
+    <button @onclick="ButtonClicked">Extract Text</button>
+    <button @onclick="GeneratePDFreport" disabled="@(!ViewButtonEnabled)">View</button>
+     <textarea rows="5" cols="40" @bind="MyText"></textarea>
 </p>
+
+@if (IsLoading)
+{
+    <p>Upload...</p>
+}
+@if (IsExtracting)
+{
+    <p>Extracting...</p>
+}
+<textarea rows="15" cols="40" @bind="Report"></textarea>
+
 
 @code {
 
     private string MyText { get; set; }
+    private string Report { get; set; }
+    private bool IsLoading { get; set; }
+    private bool IsExtracting { get; set; }
+    private string FilePath { get; set; }
+    private bool ViewButtonEnabled { get; set; }
 
     private async Task HandleFileSelected(InputFileChangeEventArgs e)
     {
-        string targetFolderPath = @"D:\source\BlazorServerPdfExtractor\BlazorServerPdfExtractor\JsonResults\";
-
+        string targetFolderPath = JsonHelper.GetFolderTargetForExtract();
         IReadOnlyList<IBrowserFile> selectedFiles;
         selectedFiles = e.GetMultipleFiles();
 
+        IsLoading = true;
+        this.StateHasChanged();
+
         foreach (var file in selectedFiles)
         {
-            var path = $"{targetFolderPath}{file.Name}";
+
+            var path = $"{targetFolderPath}\\{file.Name}";
+            FilePath = path;
             FileStream fs = File.Create(path);
 
-            // Define the buffer size for reading chunks (1 MB in this example)
             const int bufferSize = 10 * 1024 * 1024; // 10 MB buffer size
             byte[] buffer = new byte[bufferSize];
 
-            using (Stream stream = file.OpenReadStream(maxAllowedSize:2000000))
+            using (Stream stream = file.OpenReadStream(maxAllowedSize: 2000000))
             {
                 int bytesRead;
                 while ((bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length)) > 0)
@@ -46,25 +66,41 @@
 
             fs.Close();
         }
+        IsLoading = false;
         this.StateHasChanged();
     }
 
 
     private async void ButtonClicked()
     {
-        
-         string targetFolderPath = @"D:\source\BlazorServerPdfExtractor\BlazorServerPdfExtractor\pdfFiles\health-insurance-application.pdf";
-         MyText = $"{targetFolderPath} - begin extract";
+
+        string pdfName = FilePath;
+        MyText = $"{pdfName} - begin extract";
 
         try
         {
+            IsExtracting = true;
+            this.StateHasChanged();
+
             ExtractPDF extractPDF = new ExtractPDF();
-            await extractPDF.ExtractTextFromPDF(targetFolderPath);
-             
+            await extractPDF.ExtractTextFromPDF(pdfName);
+
+            IsExtracting = false;
+            ViewButtonEnabled = true; // Update the property here
+            this.StateHasChanged();
+
         }
         catch (Exception ex)
         {
             MyText = $"Error: {ex.Message}";
         }
+    }
+
+    private async void GeneratePDFreport()
+    {
+        MassExctracter massExctracter = new MassExctracter();
+        var titleMess = massExctracter.CountTitle();
+        Report = titleMess;
+
     }
 }

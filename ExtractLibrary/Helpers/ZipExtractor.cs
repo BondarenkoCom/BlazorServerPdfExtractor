@@ -4,7 +4,7 @@ namespace SpecFlowPdfReader.Helpers
 {
     public class ZipExtractor
     {
-        string extractPath = JsonHelper.GetValues().targetForResultExtractedJSON;
+        string extractPath = JsonHelper.GetFolderJsonResult();
         public string ExtractZip(string zipResult)
         {
             using (ZipArchive archive = ZipFile.OpenRead(zipResult))

@@ -11,13 +11,9 @@ namespace ExtractLibrary
 {
     public class ExtractPDF
     {
-        //private string pdfFilePath;
         private string extractedText;
-        private string? credentialsFilePath = @"D:\source\BlazorServerPdfExtractor\PDFServices.NET.SDK.Samples-master\ExtractTextTableInfoFromPDF\pdfservices-api-credentials.json";
-        private string? zipResult = @"D:\source\BlazorServerPdfExtractor\BlazorServerPdfExtractor\JsonResults\resultFromPDF.zip";
-        //private string? zipResult = JsonHelper.GetValues().zipPath;
-        //private string? credentialsFilePath = JsonHelper.GetValues().AdobeCredPath;
-        //private string? zipResult = JsonHelper.GetValues().zipPath;
+        private string? zipResult = JsonHelper.GetZipFileForExtract();
+        private string? credentialsFilePath = JsonHelper.GetValues().AdobeCredPath;
         private string? jsonResut = JsonHelper.GetValues().jsonPath;
         readonly ZipExtractor resExtract = new ZipExtractor();
 
@@ -50,8 +46,8 @@ namespace ExtractLibrary
                     File.Delete(zipResult);
                 }
                 result.SaveAs(zipResult);
-                //todo 
-                Console.WriteLine("point");
+
+                resExtract.ExtractZip(zipResult);
             }
             catch (Exception ex)
             {

@@ -8,5 +8,6 @@
        public string? AdobeCredPath { get; set; }
        public string? targetForResultExtractedJSON { get; set; }
        public string? logPath { get; set; }
+       public string? pathFromUser { get; set; }
     }
 }
