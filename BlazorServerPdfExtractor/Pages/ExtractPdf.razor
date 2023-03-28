@@ -112,8 +112,17 @@
         DateTime now = DateTime.Now;
         MassExctracter massExctracter = new MassExctracter();
         var titleMess = massExctracter.CountTitle();
-        int countHeader = massExctracter.CountElementsTable();
-        int countCheckBox = massExctracter.CountElementsCheckBox();
+        
+        int countTableHeader = massExctracter.CountElementsTable().Item1;
+        int countHeader = massExctracter.CountElementsTable().Item2;
+        
+        string textTableHeader = string.Join("br/",massExctracter.CountElementsTable().Item3);
+        string textHeader = string.Join("br/",massExctracter.CountElementsTable().Item4);
+
+
+        int countCheckBox = massExctracter.CountElementsCheckBox().Item1;
+        string textCheckBox = string.Join("br/", massExctracter.CountElementsCheckBox().Item2); 
+
         string fileName = _fileName;
         string fileSize = _fileSize;
         string dateTime = now.ToString();
@@ -135,8 +144,12 @@
 
         string outputPath = JsonHelper.ReportPathName(env.WebRootPath);
         generatorPDF.GeneratePDFFromTitle(titleMess,
+            countTableHeader,
             countHeader,
+            textTableHeader,
+            textHeader,
             countCheckBox,
+            textCheckBox,
             fileName,
             fileSize,
             dateTime,

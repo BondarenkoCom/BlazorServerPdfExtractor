@@ -26,13 +26,18 @@ namespace ExtractLibrary.ExtractFromJson
             return null;
         }
 
-        public int CountElementsTable()
+        public (int,int,List<string>,List<string>) CountElementsTable()
         {
             string jsonContent = File.ReadAllText(jsonResut);
             Root myDeserializedClass = JsonConvert.DeserializeObject<Root>(jsonContent);
 
             int headerCount = 0;
             int tableHeaderCount = 0;
+
+            List<string> textHeaderList = new List<string>();
+            List<string> textTableHeaderList = new List<string>();
+
+
             foreach (var element in myDeserializedClass.elements.Where(e => e.Path.Contains(PdfCheckPaths.pdfHeader) && e.TextSize != 0))
             {
                 try
@@ -40,10 +45,12 @@ namespace ExtractLibrary.ExtractFromJson
                     if (element.Text.Contains(PdfCheckPaths.pdfTableHeader))
                     {
                         tableHeaderCount++;
+                        textHeaderList.Add(element.Text);
                     }
                     else
                     {
                         headerCount++;
+                        textTableHeaderList.Add(element.Text);
                     }
                 }
                 catch (AssertionException ex)
@@ -51,14 +58,16 @@ namespace ExtractLibrary.ExtractFromJson
                     continue;
                 }
             }
-            return tableHeaderCount;
+            return (tableHeaderCount, headerCount, textTableHeaderList, textHeaderList);
         }
 
-        public int CountElementsCheckBox()
+        public (int,List<string>) CountElementsCheckBox()
         {
             string jsonContent = File.ReadAllText(jsonResut);
             Root myDeserializedClass = JsonConvert.DeserializeObject<Root>(jsonContent);
             int checkBoxCount = 0;
+            List<string> TextCheckBoxList = new List<string>();
+
 
             foreach (var checkBoxElement in myDeserializedClass.elements.Where(e => e.Path.Contains(PdfCheckPaths.pdfDoc) && e.TextSize != 0))
             {
@@ -69,13 +78,14 @@ namespace ExtractLibrary.ExtractFromJson
                         continue;
                     }
                     checkBoxCount++;
+                    TextCheckBoxList.Add(checkBoxElement.Text);
                 }
                 catch (AssertionException ex)
                 {
                     continue;
                 }
             }
-            return checkBoxCount;
+            return (checkBoxCount, TextCheckBoxList);
         }
 
         public (int, List<string>) CountElementsSectionParagraph()

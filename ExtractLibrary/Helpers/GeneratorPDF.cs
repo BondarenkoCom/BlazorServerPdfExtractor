@@ -6,8 +6,12 @@ namespace ExtractLibrary.Helpers
     {
         public void GeneratePDFFromTitle(
             string? title,
+            int? countTableHeader,
             int? countHeader,
+            string? textTableHeader,
+            string? textHeader,
             int? countCheckBox,
+            string? textCheckBox,
             string? fileName,
             string? fileSize,
             string? dateTime,
@@ -47,8 +51,9 @@ namespace ExtractLibrary.Helpers
                         <h1>Result: </h1>
                         <h2>Datetime: {dateTime}</h2>
                         <h2>Standard PDF: </h2>
-                        <h2>Table headers: {countHeader}</h2>
-                        <h2>Check box: {countCheckBox}</h2>
+                        <h2>Table headers: {countTableHeader}:<br/>{textTableHeader}</h2>
+                        <h2>Headers: {countHeader}:<br/>{textHeader}</h2
+                        <h2>Check box: {countCheckBox}:<br/>{textCheckBox}</h2>
                         <h2>Paragraph: {countParagraph}:<br/>{textParagraph}</h2>
                         <h2>Embedded Files: </h2>
                         <h2>Natural Language: </h2>
