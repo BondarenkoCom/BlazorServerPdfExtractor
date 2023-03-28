@@ -25,5 +25,127 @@ namespace ExtractLibrary.ExtractFromJson
             }
             return null;
         }
+
+        public int CountElementsTable()
+        {
+            string jsonContent = File.ReadAllText(jsonResut);
+            Root myDeserializedClass = JsonConvert.DeserializeObject<Root>(jsonContent);
+
+            int headerCount = 0;
+            int tableHeaderCount = 0;
+            foreach (var element in myDeserializedClass.elements.Where(e => e.Path.Contains(PdfCheckPaths.pdfHeader) && e.TextSize != 0))
+            {
+                try
+                {
+                    if (element.Text.Contains(PdfCheckPaths.pdfTableHeader))
+                    {
+                        tableHeaderCount++;
+                    }
+                    else
+                    {
+                        headerCount++;
+                    }
+                }
+                catch (AssertionException ex)
+                {
+                    continue;
+                }
+            }
+            return tableHeaderCount;
+        }
+
+        public int CountElementsCheckBox()
+        {
+            string jsonContent = File.ReadAllText(jsonResut);
+            Root myDeserializedClass = JsonConvert.DeserializeObject<Root>(jsonContent);
+            int checkBoxCount = 0;
+
+            foreach (var checkBoxElement in myDeserializedClass.elements.Where(e => e.Path.Contains(PdfCheckPaths.pdfDoc) && e.TextSize != 0))
+            {
+                try
+                {
+                    if (string.IsNullOrEmpty(checkBoxElement.Text) || !checkBoxElement.Text.Contains(PdfCheckPaths.pdfCheckBox))
+                    {
+                        continue;
+                    }
+                    checkBoxCount++;
+                }
+                catch (AssertionException ex)
+                {
+                    continue;
+                }
+            }
+            return checkBoxCount;
+        }
+
+        public (int, List<string>) CountElementsSectionParagraph()
+        {
+            string jsonContent = File.ReadAllText(jsonResut);
+            Root myDeserializedClass = JsonConvert.DeserializeObject<Root>(jsonContent);
+
+            int paragCount = 0;
+            List<string> TextParagList = new List<string>();
+
+
+            foreach (var poElement in myDeserializedClass.elements.Where(e => e.Path.Contains(PdfCheckPaths.pdfParapgraphPath) && e.TextSize != 0))
+            {
+                try
+                {
+                    paragCount++;
+                    TextParagList.Add(poElement.Text);
+                }
+                catch (AssertionException ex)
+                {
+                    continue;
+                }
+            }
+            return (paragCount, TextParagList);
+        }
+        
+        public (int, int, int, int, List<string>, List<string>, List<string>) GetSectionTable()
+        {
+            string jsonContent = File.ReadAllText(jsonResut);
+            Root myDeserializedClass = JsonConvert.DeserializeObject<Root>(jsonContent);
+
+            int tableCount = 0;
+            int tableParagCount = 0;
+            int tableRow = 0;
+            int tableBulletPoint = 0;
+            
+            List<string> tableTextParagList = new List<string>();
+            List<string> tableTextRowList = new List<string>();
+            List<string> tableTextBulletPointList = new List<string>();
+
+            foreach (var tableElement in myDeserializedClass.elements.Where(e => e.Path.Contains(PdfCheckPaths.pdfTable) && e.TextSize != 0))
+            {
+                try
+                {
+                    tableCount++;
+
+                    if (tableElement.Path.Contains(PdfCheckPaths.pdfTableParagraph))
+                    {
+                        tableParagCount++;
+                        tableTextParagList.Add(tableElement.Text);
+                    }
+                    else if (tableElement.Path.Contains(PdfCheckPaths.pdfTableRows))
+                    {
+                        tableRow++;
+                        tableTextRowList.Add(tableElement.Text);
+                    }
+                    else if (tableElement.Path.Contains(PdfCheckPaths.pdfTableBulletPoint))
+                    {
+                        tableBulletPoint++;
+                        tableTextBulletPointList.Add(tableElement.Text);
+                    }
+
+                }
+                catch (AssertionException ex)
+                {
+                    continue;
+                }
+            }
+            return (tableCount, tableParagCount, tableRow, tableBulletPoint,
+                tableTextParagList, tableTextRowList, tableTextBulletPointList);
+        }
     }
 }

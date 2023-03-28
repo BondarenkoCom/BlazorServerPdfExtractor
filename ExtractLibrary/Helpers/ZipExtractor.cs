@@ -18,7 +18,37 @@ namespace SpecFlowPdfReader.Helpers
                     }
                     else
                     {
-                        entry.ExtractToFile(entryPath,true);
+                        entry.ExtractToFile(entryPath, true);
+                    }
+                }
+            }
+            return null;
+        }
+
+        public string ExtractZipCopy(string zipResult, string newName)
+        {
+            using (ZipArchive archive = ZipFile.OpenRead(zipResult))
+            {
+                foreach (ZipArchiveEntry entry in archive.Entries)
+                {
+                    string newEntryName = entry.Name;
+
+                    if (!string.IsNullOrEmpty(newName))
+                    {
+                        newEntryName = Path.GetFileNameWithoutExtension(newName) + Path.GetExtension(entry.Name);
+                    }
+
+                    string entryPath = Path.Combine(extractPath, newEntryName);
+
+                    if (string.IsNullOrEmpty(entry.Name))
+                    {
+                        Directory.CreateDirectory(entryPath);
+                        return entryPath;
+                    }
+                    else
+                    {
+                        entry.ExtractToFile(entryPath, true);
+                        return entryPath;
                     }
                 }
             }

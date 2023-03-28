@@ -1,46 +1,202 @@
 ﻿@page "/ComparePDF"
 @using System.IO
+@using ExtractLibrary
+@using ExtractLibrary.Helpers
 @using Microsoft.AspNetCore.Components
 @using Microsoft.AspNetCore.Components.Forms
+@using SpecFlowPdfReader.Helpers
+@using System.Text
+@inject IWebHostEnvironment env
+
 
 <h3>ComparePDF</h3>
 
 <p>
-    <input type="file" @oninput="OnFileSelectedFirst" accept="application/pdf" />
-    <input type="file" @oninput="OnFileSelectedSecond" accept="application/pdf" />
+    <InputFile OnChange="@OnFileSelectedFirst" MaxFileSize="104857600" accept="application/pdf" disabled="@IsCompare" />
+    <InputFile OnChange="@OnFileSelectedSecond" MaxFileSize="104857600" accept="application/pdf" disabled="@IsCompare" />
+    <button @onclick="ComparePDFfiles" disabled="@IsCompare">Compare PDF</button>
+    <textarea rows="2" cols="40" @bind="MyText"></textarea>
 </p>
 
-<button @onclick="OnButtonClick">Compare</button>
+@if (IsLoading)
+{
+    <p style="color: red; background-color: black; border-radius: 50px; width: 130px; padding: 5px; box-sizing: border-box; font-size: 20px; font-family: 'Roboto', sans-serif;">Upload...</p>
+
+}
+
+@if (IsCompare)
+{
+    <p style="color: red; background-color: black; border-radius: 50px; width: 130px; padding: 5px; box-sizing: border-box; font-size: 20px; font-family: 'Roboto', sans-serif;">Comparing...</p>
+}
+<textarea rows="1" cols="40" @bind="Report"></textarea>
+<iframe src="@($"/reports/report.pdf?unique={uniqueKey}")" width="100%" height="800px"></iframe>
+
+
 
 @code {
     private string _message = "";
+    private bool IsLoading { get; set; }
+    private string _fileName;
+    private string _fileSize;
+    private string FilePathCopyFirst { get; set; }
+    private string FilePathCopySecond { get; set; }
+    private string MyText { get; set; }
+    private bool IsCompare { get; set; }
+    private string Report { get; set; }
+    private string jsonFolder = JsonHelper.GetFolderJsonResult();
+    private string uniqueKey { get; set; } = Guid.NewGuid().ToString();
+    private string pdfSrc { get; set; }
 
-    private void OnButtonClick()
-    {
-        _message = "Button clicked!";
-    }
+    //private bool ViewButtonEnabled { get; set; }
 
-    private async Task OnFileSelectedFirst(ChangeEventArgs e)
+    private async Task OnFileSelectedFirst(InputFileChangeEventArgs e)
     {
-        // Get the selected file
+        string targetFolderPath = JsonHelper.GetFolderTargetForExtract();
         IReadOnlyList<IBrowserFile> selectedFiles;
+        selectedFiles = e.GetMultipleFiles();
 
-        void HandleSelection(InputFileChangeEventArgs eventArgs)
+        IsLoading = true;
+        this.StateHasChanged();
+
+        foreach (var file in selectedFiles)
         {
-            const int MaxAllowedFiles = 5;
-            selectedFiles = eventArgs.GetMultipleFiles(MaxAllowedFiles);
+
+            var pathFirstCopy = $"{targetFolderPath}\\Copy1{file.Name}";
+            FilePathCopyFirst = pathFirstCopy;
+            _fileName = file.Name;
+            _fileSize = file.Size.ToString();
+
+            FileStream fs = File.Create(pathFirstCopy);
+
+            const int bufferSize = 10 * 1024 * 1024; // 10 MB buffer size
+            byte[] buffer = new byte[bufferSize];
+
+            using (Stream stream = file.OpenReadStream(maxAllowedSize: 2000000))
+            {
+                int bytesRead;
+                while ((bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length)) > 0)
+                {
+                    await fs.WriteAsync(buffer, 0, bytesRead);
+                }
+            }
+
+            fs.Close();
         }
+        IsLoading = false;
+        this.StateHasChanged();
+
     }
 
-    private async Task OnFileSelectedSecond(ChangeEventArgs e)
+    private async Task OnFileSelectedSecond(InputFileChangeEventArgs e)
     {
-        // Get the selected file
+        string targetFolderPath = JsonHelper.GetFolderTargetForExtract();
         IReadOnlyList<IBrowserFile> selectedFiles;
+        selectedFiles = e.GetMultipleFiles();
 
-        void HandleSelection(InputFileChangeEventArgs eventArgs)
+        IsLoading = true;
+        this.StateHasChanged();
+
+        foreach (var file in selectedFiles)
         {
-            const int MaxAllowedFiles = 5;
-            selectedFiles = eventArgs.GetMultipleFiles(MaxAllowedFiles);
+
+            var pathSecondCopy = $"{targetFolderPath}\\Copy2{file.Name}";
+            FilePathCopySecond = pathSecondCopy;
+            _fileName = file.Name;
+            _fileSize = file.Size.ToString();
+            FileStream fs = File.Create(pathSecondCopy);
+
+            const int bufferSize = 10 * 1024 * 1024; // 10 MB buffer size
+            byte[] buffer = new byte[bufferSize];
+
+            using (Stream stream = file.OpenReadStream(maxAllowedSize: 2000000))
+            {
+                int bytesRead;
+                while ((bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length)) > 0)
+                {
+                    await fs.WriteAsync(buffer, 0, bytesRead);
+                }
+            }
+
+            fs.Close();
+        }
+        IsLoading = false;
+        this.StateHasChanged();
+    }
+
+    private async void ComparePDFfiles()
+    {
+        DateTime now = DateTime.Now;
+        string pdfNameFirst = FilePathCopyFirst;
+        string pdfNameSecond = FilePathCopyFirst;
+        MyText = $"{pdfNameFirst} - begin extract first PDF";
+        MyText = $"{pdfNameSecond} - begin extract second PDF";
+        string fileName = _fileName;
+        string dateTime = now.ToString();
+
+
+        try
+        {
+            IsCompare = true;
+            this.StateHasChanged();
+
+            ExtractPDF extractPDFCopyFirst = new ExtractPDF();
+            var resultFirst = await extractPDFCopyFirst.ExtractTextFromPDFForCompare(pdfNameFirst);
+
+            ExtractPDF extractPDFCopySecond = new ExtractPDF();
+            var resultSecond = await extractPDFCopySecond.ExtractTextFromPDFForCompare(pdfNameSecond);
+
+            Console.WriteLine($"First path - {resultFirst} ,  Second path - {resultSecond}");
+
+            ComparingPDF comparingPDF = new ComparingPDF();
+
+            //Debug
+            // Dictionary<string, (string, string)> differences = comparingPDF.TestCompare(
+            //    resultFirst, @"D:\source\BlazorServerPdfExtractor\BlazorServerPdfExtractor\JsonResults\0mcaa.json");
+
+            Dictionary<string, (string, string)> differences = comparingPDF.TestCompare(
+               resultFirst, resultSecond);
+
+
+            if (differences == null || differences.Count == 0)
+            {
+                Report = "Passed";
+            }
+            else
+            {
+                StringBuilder reportBuilder = new StringBuilder();
+                foreach (var diff in differences)
+                {
+                    reportBuilder.AppendLine($"Results - {diff.Key}:");
+                    reportBuilder.AppendLine($"File1: {diff.Value.Item1}");
+                    reportBuilder.AppendLine($"File2: {diff.Value.Item2}");
+                }
+                //Report = reportBuilder.ToString();
+
+                GeneratorPDF generatorPDF = new GeneratorPDF();
+                string outputPath = JsonHelper.ReportPathName(env.WebRootPath);
+
+                generatorPDF.GeneratePDFForCompare(fileName,dateTime, reportBuilder.ToString(), outputPath);
+
+                pdfSrc = outputPath; // Update the pdfSrc variable with the output path
+                this.StateHasChanged();
+
+                uniqueKey = Guid.NewGuid().ToString(); // Update the uniqueKey variable to force a refresh
+                this.StateHasChanged();
+
+            }
+            IsCompare = false;
+            this.StateHasChanged();
+
+            FolderContent.ClearFolderContents(jsonFolder);
+        }
+        catch (Exception ex)
+        {
+            MyText = $"Error: {ex.Message}";
+            IsCompare = false;
+            this.StateHasChanged();
+
+            //Clear Garbage
+            FolderContent.ClearFolderContents(jsonFolder);
         }
     }
 }
