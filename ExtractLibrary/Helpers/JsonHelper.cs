@@ -55,8 +55,6 @@ namespace SpecFlowPdfReader.Helpers
             string currentDirectory = Directory.GetCurrentDirectory();
             string JsonPath = Path.Combine(path, "reports", "report.pdf");
 
-            //string JsonPath = Path.Combine(currentDirectory, "Reports", "output.pdf");
-
             return JsonPath;
         }
     }
