@@ -14,7 +14,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\SpecFlowReadPdf\PDFServices.NET.SDK.Samples-master\ExtractTextTableInfoFromPDF\ExtractTextTableInfoFromPDF.csproj" />
     <ProjectReference Include="..\PDFServices.NET.SDK.Samples-master\ExtractTextTableInfoFromPDF\ExtractTextTableInfoFromPDF.csproj" />
   </ItemGroup>
 
