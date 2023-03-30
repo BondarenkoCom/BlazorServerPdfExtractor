@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using ExtractTextTableInfoFromPDF.Models;
+using Newtonsoft.Json;
 using SpecFlowPdfReader.Models;
 
 namespace SpecFlowPdfReader.Helpers
@@ -56,6 +57,17 @@ namespace SpecFlowPdfReader.Helpers
             string JsonPath = Path.Combine(path, "reports", "report.pdf");
 
             return JsonPath;
+        }
+
+        public static (string ClientId, string ClientSecret) GetAbodeKeys()
+        {
+            string currentDirectory = Directory.GetCurrentDirectory();
+            string jsonPath = Path.Combine(currentDirectory, "Resourses", "pdfservices-api-credentials.json");
+
+            string jsonString = File.ReadAllText(jsonPath);
+            Credentials credentials = JsonConvert.DeserializeObject<Credentials>(jsonString);
+
+            return (credentials.client_credentials.client_id, credentials.client_credentials.client_secret);
         }
     }
 }

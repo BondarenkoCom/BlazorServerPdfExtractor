@@ -47,8 +47,6 @@
     private string uniqueKey { get; set; } = Guid.NewGuid().ToString();
     private string pdfSrc { get; set; }
 
-    //private bool ViewButtonEnabled { get; set; }
-
     private async Task OnFileSelectedFirst(InputFileChangeEventArgs e)
     {
         string targetFolderPath = JsonHelper.GetFolderTargetForExtract();

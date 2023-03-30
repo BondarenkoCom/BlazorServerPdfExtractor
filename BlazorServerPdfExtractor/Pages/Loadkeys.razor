@@ -1,0 +1,22 @@
+﻿@page "/loadkeys"
+@using ExtractLibrary.Helpers
+@using SpecFlowPdfReader.Helpers
+
+<h3>loadkeys</h3>
+
+<p>
+
+    <button @onclick="ReadKeysAdobe">Read keys</button>
+    <textarea rows="5" cols="40" @bind="MyText"></textarea>
+</p>
+
+@code {
+    CheckAdobe _checkAdobe = new CheckAdobe();
+    private string MyText;
+
+    public async void ReadKeysAdobe()
+    {
+        var res = await _checkAdobe.GetAdobeKeysValue();
+        MyText = ($"client ID - {res.Item1} \n client Secret - {res.Item2}");
+    }
+}
