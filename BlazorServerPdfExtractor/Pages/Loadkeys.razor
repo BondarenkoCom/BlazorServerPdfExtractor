@@ -5,18 +5,49 @@
 <h3>loadkeys</h3>
 
 <p>
-
     <button @onclick="ReadKeysAdobe">Read keys</button>
-    <textarea rows="5" cols="40" @bind="MyText"></textarea>
+    <button @onclick="UpdateKeys">Update keys</button>
+    <br>
+    <br>
+    <label for="clientID">Client ID:</label>
+    <input id="clientID" type="text" @bind="ClientIdInput" placeholder="Enter client ID">
+    <br>
+    <label for="clientSecret">Client Secret:</label>
+    <input id="clientSecret" type="text" @bind="ClientSecretInput" placeholder="Enter client secret">
+    <br>
+    <label for="organizationId">Organization ID:</label>
+    <input id="organizationId" type="text" @bind="OrganizationIdInput" placeholder="Enter organization ID">
+    <br>
+    <label for="accountId">Account ID:</label>
+    <input id="accountId" type="text" @bind="AccountIdInput" placeholder="Enter account ID">
+    <br>
+    <label for="privateTextContain">Private Text Contain:</label>
+    <textarea id="privateTextContain" rows="5" cols="40" @bind="PrivateKeyTextInput" placeholder="Enter private key text"></textarea>
+    <br>
+    <textarea rows="15" cols="80" @bind="MyText"></textarea>
 </p>
 
 @code {
     CheckAdobe _checkAdobe = new CheckAdobe();
+    private string WorkPath;
     private string MyText;
+    private string ClientIdInput;
+    private string ClientSecretInput;
+    private string OrganizationIdInput;
+    private string AccountIdInput;
+    private string PrivateKeyFileInput;
+    private string PrivateKeyTextInput;
 
     public async void ReadKeysAdobe()
     {
         var res = await _checkAdobe.GetAdobeKeysValue();
-        MyText = ($"client ID - {res.Item1} \n client Secret - {res.Item2}");
+        MyText =
+        ($"Work path - {res.Item1} \n client ID - {res.Item2} \n client Secret - {res.Item3} \n adobe organizationId - {res.Item4} \n adobeAccountId - {res.Item5} \n ------ \n private key text - {res.Item7} \n");
+    }
+
+     public async void UpdateKeys()
+    {
+      JsonHelper.UpdateAdobeKeys(ClientIdInput, ClientSecretInput, OrganizationIdInput, AccountIdInput, PrivateKeyTextInput);
+
     }
 }

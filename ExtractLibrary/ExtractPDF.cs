@@ -1,5 +1,4 @@
-﻿using Adobe.PDFServicesSDK.auth;
-using Adobe.PDFServicesSDK.io;
+﻿using Adobe.PDFServicesSDK.io;
 using Adobe.PDFServicesSDK.options.extractpdf;
 using Adobe.PDFServicesSDK.pdfops;
 using AdobeExecutionContext = Adobe.PDFServicesSDK.ExecutionContext;

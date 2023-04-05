@@ -7,6 +7,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Remove="C:\Users\Honor\.nuget\packages\select.htmltopdf\22.2.0\contentFiles\any\any\Select.Html.dep" />
+    <Content Remove="C:\Users\Honor\.nuget\packages\select.pdf\22.2.0\contentFiles\any\any\Select.Html.dep" />
+    <Content Remove="C:\Users\Honor\.nuget\packages\select.pdf\22.2.0\contentFiles\any\any\Select.Tools.dep" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="NUnit" Version="3.13.3" />
     <PackageReference Include="Select.HtmlToPdf" Version="22.2.0" />
     <PackageReference Include="Select.HtmlToPdf.NetCore" Version="22.2.0" />
