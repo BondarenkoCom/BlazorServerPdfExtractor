@@ -82,7 +82,6 @@
         }
         IsLoading = false;
         this.StateHasChanged();
-
     }
 
     private async Task OnFileSelectedSecond(InputFileChangeEventArgs e)
@@ -125,7 +124,7 @@
     {
         DateTime now = DateTime.Now;
         string pdfNameFirst = FilePathCopyFirst;
-        string pdfNameSecond = FilePathCopyFirst;
+        string pdfNameSecond = FilePathCopySecond;
         MyText = $"{pdfNameFirst} - begin extract first PDF";
         MyText = $"{pdfNameSecond} - begin extract second PDF";
         string fileName = _fileName;
@@ -143,13 +142,13 @@
             ExtractPDF extractPDFCopySecond = new ExtractPDF();
             var resultSecond = await extractPDFCopySecond.ExtractTextFromPDFForCompare(pdfNameSecond);
 
-            Console.WriteLine($"First path - {resultFirst} ,  Second path - {resultSecond}");
+            Console.WriteLine($"First path - {resultFirst} \n  Second path - {resultSecond}");
 
             ComparingPDF comparingPDF = new ComparingPDF();
 
             //Debug
-            // Dictionary<string, (string, string)> differences = comparingPDF.TestCompare(
-            //    resultFirst, @"D:\source\BlazorServerPdfExtractor\BlazorServerPdfExtractor\JsonResults\0mcaa.json");
+            //Dictionary<string, (string, string)> differences = comparingPDF.TestCompare(
+            //   resultFirst, @"D:\source\BlazorServerPdfExtractor\BlazorServerPdfExtractor\JsonResults\PQI5P.json");
 
             Dictionary<string, (string, string)> differences = comparingPDF.TestCompare(
                resultFirst, resultSecond);
@@ -162,18 +161,22 @@
             else
             {
                 StringBuilder reportBuilder = new StringBuilder();
+
                 foreach (var diff in differences)
                 {
-                    reportBuilder.AppendLine($"Results - {diff.Key}:");
-                    reportBuilder.AppendLine($"File1: {diff.Value.Item1}");
-                    reportBuilder.AppendLine($"File2: {diff.Value.Item2}");
+                    reportBuilder.AppendLine($"<div class=\"difference\">");
+                    reportBuilder.AppendLine($"  <div class=\"difference-key\">Results - {diff.Key}:</div>");
+                    reportBuilder.AppendLine($"  <div class=\"difference-file1\">File1: {diff.Value.Item1}</div>");
+                    reportBuilder.AppendLine($"  <div class=\"difference-file2\">File2: {diff.Value.Item2}</div>");
+                    reportBuilder.AppendLine($"</div>");
                 }
+
                 //Report = reportBuilder.ToString();
 
                 GeneratorPDF generatorPDF = new GeneratorPDF();
                 string outputPath = JsonHelper.ReportPathName(env.WebRootPath);
 
-                generatorPDF.GeneratePDFForCompare(fileName,dateTime, reportBuilder.ToString(), outputPath);
+                generatorPDF.GeneratePDFForCompare(fileName, dateTime, reportBuilder.ToString(), outputPath);
 
                 pdfSrc = outputPath; // Update the pdfSrc variable with the output path
                 this.StateHasChanged();

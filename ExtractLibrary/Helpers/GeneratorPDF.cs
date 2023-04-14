@@ -95,19 +95,58 @@ namespace ExtractLibrary.Helpers
             }
 
             // Prepare HTML content using the title
+            //string htmlContent = $@"
+            //    <html>
+            //        <body>
+            //            <h1>{title}</h1>
+            //            <h2>{date}</h2>
+            //            <p>{difference}</p
+            //        </body>
+            //    </html>";
+
             string htmlContent = $@"
-                <html>
-                    <body>
-                        <h1>{title}</h1>
-                        <h2>{date}</h2>
-                        <p>{difference}</p
-                    </body>
-                </html>";
+        <!DOCTYPE html>
+        <html>
+            <head>
+                <style>
+                    body {{
+                        font-family: Arial, sans-serif;
+                        font-size: 14px;
+                        line-height: 1.6;
+                    }}
+                    h1 {{
+                        font-size: 24px;
+                    }}
+                    h2 {{
+                        font-size: 18px;
+                        color: #444;
+                        margin-bottom: 20px;
+                    }}
+                    .difference {{
+                        margin-bottom: 20px;
+                    }}
+                    .difference-key {{
+                        font-weight: bold;
+                    }}
+                    .difference-file1,
+                    .difference-file2 {{
+                        margin-left: 20px;
+                    }}
+                </style>
+            </head>
+            <body>
+                <h1>{title}</h1>
+                <h2>{date}</h2>
+                {difference}
+            </body>
+        </html>";
+        
 
-            // Configure the HTML to PDF conversion
-            HtmlToPdf converter = new HtmlToPdf();
 
-            converter.Options.MarginTop = 20;
+        // Configure the HTML to PDF conversion
+        HtmlToPdf converter = new HtmlToPdf();
+
+        converter.Options.MarginTop = 20;
             converter.Options.MarginRight = 20;
             converter.Options.MarginBottom = 20;
             converter.Options.MarginLeft = 20;
@@ -117,12 +156,12 @@ namespace ExtractLibrary.Helpers
             // Perform the conversion
             PdfDocument document = converter.ConvertHtmlString(htmlContent);
 
-            // Save the PDF document to the output path
-            document.Save(outputPath);
+        // Save the PDF document to the output path
+        document.Save(outputPath);
 
             // Close the PDF document
             document.Close();
 
         }
-    }
+}
 }

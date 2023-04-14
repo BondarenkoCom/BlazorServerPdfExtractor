@@ -1,4 +1,5 @@
 ﻿@page "/loadkeys"
+@using BlazorServerPdfExtractor.ApiHelper
 @using ExtractLibrary.Helpers
 @using SpecFlowPdfReader.Helpers
 
@@ -29,6 +30,7 @@
 
 @code {
     CheckAdobe _checkAdobe = new CheckAdobe();
+    AdobeApi _adobeApi = new AdobeApi();   
     private string WorkPath;
     private string MyText;
     private string ClientIdInput;
@@ -41,13 +43,14 @@
     public async void ReadKeysAdobe()
     {
         var res = await _checkAdobe.GetAdobeKeysValue();
+        var adobeExpDate = await _adobeApi.GetAccess();
         MyText =
-        ($"Work path - {res.Item1} \n client ID - {res.Item2} \n client Secret - {res.Item3} \n adobe organizationId - {res.Item4} \n adobeAccountId - {res.Item5} \n ------ \n private key text - {res.Item7} \n");
+        ($"Expiration date -{adobeExpDate} Work path - {res.Item1} \n client ID - {res.Item2} \n client Secret - {res.Item3} \n adobe organizationId - {res.Item4} \n adobeAccountId - {res.Item5} \n ------ \n private key text - {res.Item7} \n");
     }
 
-     public async void UpdateKeys()
+    public async void UpdateKeys()
     {
-      JsonHelper.UpdateAdobeKeys(ClientIdInput, ClientSecretInput, OrganizationIdInput, AccountIdInput, PrivateKeyTextInput);
+        JsonHelper.UpdateAdobeKeys(ClientIdInput, ClientSecretInput, OrganizationIdInput, AccountIdInput, PrivateKeyTextInput);
 
     }
 }
