@@ -68,23 +68,23 @@ namespace ExtractLibrary
                 var arr1 = (JArray)token1;
                 var arr2 = (JArray)token2;
 
-                for (int i = 0; i < arr1.Count; i++)
+                int maxLength = Math.Max(arr1.Count, arr2.Count);
+
+                for (int i = 0; i < maxLength; i++)
                 {
-                    if (i < arr2.Count)
+                    if (i < arr1.Count && i < arr2.Count)
                     {
                         CompareTokens(arr1[i], arr2[i], differences, $"{path}[{i}]");
                     }
-                    else
+                    else if (i < arr1.Count)
                     {
                         differences[$"{path}[{i}]"] = (arr1[i].ToString(), null);
                     }
+                    else
+                    {
+                        differences[$"{path}[{i}]"] = (null, arr2[i].ToString());
+                    }
                 }
-
-                for (int i = arr1.Count; i < arr2.Count; i++)
-                {
-                    differences[$"{path}[{i}]"] = (null, arr2[i].ToString());
-                }
-                
             }
             else if (!JToken.DeepEquals(token1, token2))
             {

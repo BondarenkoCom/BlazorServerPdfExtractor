@@ -13,8 +13,9 @@
 
 <p>
     <InputFile OnChange="@HandleFileSelected" MaxFileSize="104857600" disabled="@IsExtracting" />
-    <button @onclick="ButtonClicked" disabled=@(IsExtracting)>Extract Text</button>
+    <button @onclick="ButtonClicked" disabled=@(!FileSelected || IsExtracting )>Extract Text</button>
     <button @onclick="GeneratePDFreport" disabled="@(!ViewButtonEnabled)">View</button>
+    <button @onclick="CleanReport">Clean report</button>
     <textarea rows="5" cols="40" @bind="MyText"></textarea>
 </p>
 
@@ -28,7 +29,12 @@
     <p style="color: red; background-color: black; border-radius: 50px; width: 130px; padding: 5px; box-sizing: border-box; font-size: 20px; font-family: 'Roboto', sans-serif;">Extracting...</p>
 }
 
-<iframe src="@($"/reports/report.pdf?unique={uniqueKey}")" width="100%" height="800px"></iframe>
+@if (IsViewLoading)
+{
+    <p style="color: red; background-color: black; border-radius: 50px; width: 130px; padding: 5px; box-sizing: border-box; font-size: 20px; font-family: 'Roboto', sans-serif;">Loading report...</p>
+}
+
+<iframe src="@($"/reports/report.pdf?unique={uniqueKey}#zoom=150")" width="100%" height="800px"></iframe>
 
 @code {
 
@@ -36,6 +42,7 @@
     private string Report { get; set; }
     private bool IsLoading { get; set; }
     private bool IsExtracting { get; set; }
+    private bool IsViewLoading { get; set; }
     private string FilePath { get; set; }
     private bool ViewButtonEnabled { get; set; }
     private string pdfSrc { get; set; }
@@ -43,6 +50,8 @@
     private string uniqueKey { get; set; } = Guid.NewGuid().ToString();
     private string _fileName;
     private string _fileSize;
+    private string _reportPath;
+    private bool FileSelected { get; set; } = false;
 
     private async Task HandleFileSelected(InputFileChangeEventArgs e)
     {
@@ -78,9 +87,33 @@
             fs.Close();
         }
         IsLoading = false;
+        FileSelected = true;
         this.StateHasChanged();
     }
 
+    private async void CleanReport()
+    {
+        _reportPath = Path.Combine(env.WebRootPath, "reports", "report.pdf");
+
+        try
+        {
+            if (File.Exists(_reportPath))
+            {
+                File.Delete(_reportPath);
+                RemoveIframeSource(); // delete Iframe source
+            }
+        }
+        catch (Exception ex)
+        {
+            MyText = ex.Message;
+        }
+    }
+
+    private void RemoveIframeSource()
+    {
+        uniqueKey = Guid.NewGuid().ToString();
+        this.StateHasChanged(); // Update component
+    }
 
     private async void ButtonClicked()
     {
@@ -109,19 +142,22 @@
 
     private async void GeneratePDFreport()
     {
+        IsViewLoading = true;
+        this.StateHasChanged();
+
         DateTime now = DateTime.Now;
         MassExctracter massExctracter = new MassExctracter();
         var titleMess = massExctracter.CountTitle();
-        
+
         int countTableHeader = massExctracter.CountElementsTable().Item1;
         int countHeader = massExctracter.CountElementsTable().Item2;
-        
-        string textTableHeader = string.Join("br/",massExctracter.CountElementsTable().Item3);
-        string textHeader = string.Join("br/",massExctracter.CountElementsTable().Item4);
+
+        string textTableHeader = string.Join("br/", massExctracter.CountElementsTable().Item3);
+        string textHeader = string.Join("br/", massExctracter.CountElementsTable().Item4);
 
 
         int countCheckBox = massExctracter.CountElementsCheckBox().Item1;
-        string textCheckBox = string.Join("br/", massExctracter.CountElementsCheckBox().Item2); 
+        string textCheckBox = string.Join("br/", massExctracter.CountElementsCheckBox().Item2);
 
         string fileName = _fileName;
         string fileSize = _fileSize;
@@ -171,6 +207,7 @@
         this.StateHasChanged();
         IsLoading = false;
         this.StateHasChanged();
-
+        IsViewLoading = false;
+        this.StateHasChanged();
     }
 }
