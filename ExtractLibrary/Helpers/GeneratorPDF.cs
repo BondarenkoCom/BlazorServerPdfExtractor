@@ -4,6 +4,86 @@ namespace ExtractLibrary.Helpers
 {
     public class GeneratorPDF
     {
+        public void GeneratePDFFromFont(
+            string? fileName,
+            string? fileSize,
+            string? dateTime,
+            int? countTextFonts,
+            string? textFontType,
+            string? textFont,
+            string? outputPath)
+        {
+            if (string.IsNullOrEmpty(fileName))
+            {
+                fileName = "empty";
+                fileSize = "empty";
+                countTextFonts = 0;
+                textFontType = "empty";
+                textFont = "emtpy";
+            }
+
+            string htmlContent = $@"
+        <html>
+            <head>
+                <style>
+                    body {{
+                        font-family: Arial, sans-serif;
+                    }}
+                    h1, h2, h3 {{
+                        margin-bottom: 10px;
+                    }}
+                    h1 {{
+                        font-size: 24px;
+                    }}
+                    h2 {{
+                        font-size: 20px;
+                    }}
+                    h3 {{
+                        font-size: 18px;
+                    }}
+                    ul {{
+                        font-size: 16px;
+                    }}
+                    li {{
+                        margin-bottom: 10px;
+                    }}
+                </style>
+            </head>
+            <body>
+                <h1>PDF Report</h1>
+                <h3>Filename: {fileName}</h3>
+                <h3>Size: {fileSize}</h3>
+                <h3>Datetime: {dateTime}</h3>
+                <h2>Result:</h2>
+                <h2>Element counts:{countTextFonts}</h2>
+                <h2>Font type:{textFont}</h2>
+                <ul>
+                    <hr/>
+                    <li>Text fonts: <br/>{textFontType}</li>
+                </ul>
+            </body>
+        </html>";
+
+            // Configure the HTML to PDF conversion
+            HtmlToPdf converter = new HtmlToPdf();
+
+            converter.Options.MarginTop = 20;
+            converter.Options.MarginRight = 20;
+            converter.Options.MarginBottom = 20;
+            converter.Options.MarginLeft = 20;
+            converter.Options.PdfPageSize = PdfPageSize.A4;
+            converter.Options.PdfPageOrientation = PdfPageOrientation.Portrait;
+
+            PdfDocument document = converter.ConvertHtmlString(htmlContent);
+
+            // Save the PDF document to the output path
+            document.Save(outputPath);
+
+            // Close the PDF document
+            document.Close();
+
+        }
+
         public void GeneratePDFFromTitle(
             string? title,
             int? countTableHeader,
@@ -85,9 +165,6 @@ namespace ExtractLibrary.Helpers
             converter.Options.MarginLeft = 20;
             converter.Options.PdfPageSize = PdfPageSize.A4;
             converter.Options.PdfPageOrientation = PdfPageOrientation.Portrait;
-            //converter.Options.AutoFitWidth = HtmlToPdfPageFitMode.ShrinkOnly;
-            //converter.Options.AutoFitHeight = HtmlToPdfPageFitMode.ShrinkOnly;
-            // Perform the conversion
 
             PdfDocument document = converter.ConvertHtmlString(htmlContent);
 
@@ -99,7 +176,7 @@ namespace ExtractLibrary.Helpers
         }
 
 
-        public void GeneratePDFForCompare(string? title, string? titleSecond , string? date, string? difference, string? outputPath)
+        public void GeneratePDFForCompare(string? title, string? titleSecond, string? date, string? difference, string? outputPath)
         {
             if (string.IsNullOrEmpty(title))
             {

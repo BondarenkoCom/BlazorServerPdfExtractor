@@ -1,4 +1,4 @@
-﻿@page "/ExtractPdf"
+﻿@page "/extractTextFont"
 @using System.IO
 @using DinkToPdf
 @using ExtractLibrary
@@ -9,19 +9,23 @@
 @using SpecFlowPdfReader.Helpers
 @inject IWebHostEnvironment env
 
-<h3>Extract PDF</h3>
+<h3>Extract text by font</h3>
 
 <div class="container">
     <div class="button-row">
-        <InputFile OnChange="@HandleFileSelected" MaxFileSize="104857600" disabled="@IsExtracting" />
-        <button class="btn btn-primary" @onclick="ButtonClicked" disabled=@(!FileSelected || IsExtracting )>Extract Text</button>
+        <div class="input-file-container">
+            <InputFile OnChange="@HandleFileSelected" MaxFileSize="104857600" disabled="@IsExtracting" />
+        </div>
+        <input id="fontType" type="text" @bind="FontType" placeholder="Enter Font Type" class="form-control">
+        <button class="btn btn-primary" @onclick="ButtonClicked" disabled=@(!FileSelected || IsExtracting)>Extract Text</button>
         <button class="btn btn-success" @onclick="GeneratePDFreport" disabled="@(!ViewButtonEnabled)">View</button>
         <button class="btn btn-danger" @onclick="CleanReport">Clean report</button>
     </div>
     <div>
-        <textarea class="form-control text-area-spacing" rows="1" cols="40" @bind="MyText"></textarea>
+        <textarea class="form-control" rows="1" cols="70" @bind="MyText"></textarea>
     </div>
 </div>
+
 
 @if (IsLoading)
 {
@@ -44,12 +48,12 @@
     </div>
 }
 
+<iframe class ="pdf-frame" src="@($"/reports/report.pdf?unique={uniqueKey}#zoom=150")" width="100%" height="800px"></iframe>
 
-<iframe class="pdf-frame" src="@($"/reports/report.pdf?unique={uniqueKey}#zoom=150")" width="100%" height="800px"></iframe>
 
 
 <style>
-    .container {
+     .container {
         display: flex;
         flex-direction: column;
         align-items: flex-start;
@@ -116,14 +120,9 @@
         border: 15px;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     }
-
-    .text-area-spacing {
-        margin-bottom: 12px;
-    }
 </style>
 
 @code {
-
     private string MyText { get; set; }
     private string Report { get; set; }
     private bool IsLoading { get; set; }
@@ -137,8 +136,9 @@
     private string _fileName;
     private string _fileSize;
     private string _reportPath;
-    private string _tempFoldePath;
     private bool FileSelected { get; set; } = false;
+    private string _tempFoldePath;
+    private string FontType = "TrueType";
 
     private async Task HandleFileSelected(InputFileChangeEventArgs e)
     {
@@ -178,10 +178,11 @@
         this.StateHasChanged();
     }
 
+
     private async void CleanReport()
     {
         _reportPath = Path.Combine(env.WebRootPath, "reports", "report.pdf");
-        _tempFoldePath = Path.Combine("tempZip");
+         _tempFoldePath = Path.Combine("tempZip");
 
         try
         {
@@ -190,8 +191,8 @@
                 File.Delete(_reportPath);
                 RemoveIframeSource(); // delete Iframe source
             }
-             
-            DirectoryInfo tempFolder = new DirectoryInfo(_tempFoldePath);
+
+             DirectoryInfo tempFolder = new DirectoryInfo(_tempFoldePath);
 
 
             if (tempFolder.Exists)
@@ -201,7 +202,6 @@
                     file.Delete();
                 }
             }
-
         }
         catch (Exception ex)
         {
@@ -242,65 +242,34 @@
 
     private async void GeneratePDFreport()
     {
+        //TrueType
         IsViewLoading = true;
         this.StateHasChanged();
 
         DateTime now = DateTime.Now;
-        MassExctracter massExctracter = new MassExctracter();
-        var titleMess = massExctracter.CountTitle();
-
-        int countTableHeader = massExctracter.CountElementsTable().Item1;
-        int countHeader = massExctracter.CountElementsTable().Item2;
-
-        string textTableHeader = string.Join("br/", massExctracter.CountElementsTable().Item3);
-        string textHeader = string.Join("br/", massExctracter.CountElementsTable().Item4);
-
-
-        int countCheckBox = massExctracter.CountElementsCheckBox().Item1;
-        string textCheckBox = string.Join("br/", massExctracter.CountElementsCheckBox().Item2);
-
-        string fileName = _fileName;
-        string fileSize = _fileSize;
         string dateTime = now.ToString();
-        int countParagraph = massExctracter.CountElementsSectionParagraph().Item1;
-        string textParagraph = string.Join("<br/>", massExctracter.CountElementsSectionParagraph().Item2);
 
-        int countTable = massExctracter.GetSectionTable().Item1;
-        int countTableParagCount = massExctracter.GetSectionTable().Item2;
-        int countTableRow = massExctracter.GetSectionTable().Item3;
-        int countTableBulletPoint = massExctracter.GetSectionTable().Item4;
+        MassExctracter massExctracter = new MassExctracter();
 
-        string tableTextParagList = string.Join("<br/>", massExctracter.GetSectionTable().Item5);
-        string tableTextRowList = string.Join("<br/>", massExctracter.GetSectionTable().Item6);
-        string tableTextBulletPointList = string.Join("<br/>", massExctracter.GetSectionTable().Item7);
+        int countFonts = massExctracter.CountElementFont(FontType).Item1;
+        var textFontsType = string.Join("<hr/>", massExctracter.CountElementFont(FontType).Item2);
+        string textByFonts = FontType;
 
         GeneratorPDF generatorPDF = new GeneratorPDF();
         IsLoading = true;
         this.StateHasChanged(); // Trigger a re-render to update the PDF embed
 
         string outputPath = JsonHelper.ReportPathName(env.WebRootPath);
-        generatorPDF.GeneratePDFFromTitle(titleMess,
-            countTableHeader,
-            countHeader,
-            textTableHeader,
-            textHeader,
-            countCheckBox,
-            textCheckBox,
-            fileName,
-            fileSize,
+
+        generatorPDF.GeneratePDFFromFont(
+            _fileName,
+            _fileSize,
             dateTime,
-            countParagraph,
-            textParagraph,
-            countTable.ToString(),
-            countTableParagCount.ToString(),
-            countTableRow.ToString(),
-            countTableBulletPoint.ToString(),
-            tableTextParagList.ToString(),
-            tableTextRowList.ToString(),
-            tableTextBulletPointList.ToString(),
+            countFonts,
+            textFontsType,
+            textByFonts,
             outputPath);
 
-        //Make Refresh Iframe
         pdfSrc = outputPath; // Update the pdfSrc variable with the output path
         this.StateHasChanged(); // Trigger a re-render to update the PDF embed
         uniqueKey = Guid.NewGuid().ToString();

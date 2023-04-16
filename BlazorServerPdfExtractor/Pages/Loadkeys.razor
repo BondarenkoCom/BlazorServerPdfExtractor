@@ -5,32 +5,54 @@
 
 <h3>loadkeys</h3>
 
-<p>
+<style>
+    .form-container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .input-container {
+        margin-bottom: 1rem;
+    }
+
+    textarea {
+        width: 100%;
+    }
+</style>
+
+<div class="form-container">
+    <div class="input-container">
+        <label for="clientID">Client ID:</label>
+        <input id="clientID" type="text" @bind="ClientIdInput" placeholder="Enter client ID">
+    </div>
+    <div class="input-container">
+        <label for="clientSecret">Client Secret:</label>
+        <input id="clientSecret" type="text" @bind="ClientSecretInput" placeholder="Enter client secret">
+    </div>
+    <div class="input-container">
+        <label for="organizationId">Organization ID:</label>
+        <input id="organizationId" type="text" @bind="OrganizationIdInput" placeholder="Enter organization ID">
+    </div>
+    <div class="input-container">
+        <label for="accountId">Account ID:</label>
+        <input id="accountId" type="text" @bind="AccountIdInput" placeholder="Enter account ID">
+    </div>
+    <div class="input-container">
+        <label for="privateTextContain">Private Text Contain:</label>
+        <textarea id="privateTextContain" rows="5" @bind="PrivateKeyTextInput" placeholder="Enter private key text"></textarea>
+    </div>
     <button @onclick="ReadKeysAdobe">Read keys</button>
     <button @onclick="UpdateKeys">Update keys</button>
     <br>
     <br>
-    <label for="clientID">Client ID:</label>
-    <input id="clientID" type="text" @bind="ClientIdInput" placeholder="Enter client ID">
-    <br>
-    <label for="clientSecret">Client Secret:</label>
-    <input id="clientSecret" type="text" @bind="ClientSecretInput" placeholder="Enter client secret">
-    <br>
-    <label for="organizationId">Organization ID:</label>
-    <input id="organizationId" type="text" @bind="OrganizationIdInput" placeholder="Enter organization ID">
-    <br>
-    <label for="accountId">Account ID:</label>
-    <input id="accountId" type="text" @bind="AccountIdInput" placeholder="Enter account ID">
-    <br>
-    <label for="privateTextContain">Private Text Contain:</label>
-    <textarea id="privateTextContain" rows="5" cols="40" @bind="PrivateKeyTextInput" placeholder="Enter private key text"></textarea>
-    <br>
-    <textarea rows="15" cols="80" @bind="MyText"></textarea>
-</p>
+    <textarea rows="15" @bind="MyText"></textarea>
+</div>
+
 
 @code {
     CheckAdobe _checkAdobe = new CheckAdobe();
-    AdobeApi _adobeApi = new AdobeApi();   
+    AdobeApi _adobeApi = new AdobeApi();
     private string WorkPath;
     private string MyText;
     private string ClientIdInput;
@@ -43,7 +65,8 @@
     public async void ReadKeysAdobe()
     {
         var res = await _checkAdobe.GetAdobeKeysValue();
-        var adobeExpDate = await _adobeApi.GetAccess();
+        //var adobeExpDate = await _adobeApi.GetExpirationDateAsync();
+        var adobeExpDate = "Null";
         MyText =
         ($"Expiration date -{adobeExpDate} Work path - {res.Item1} \n client ID - {res.Item2} \n client Secret - {res.Item3} \n adobe organizationId - {res.Item4} \n adobeAccountId - {res.Item5} \n ------ \n private key text - {res.Item7} \n");
     }

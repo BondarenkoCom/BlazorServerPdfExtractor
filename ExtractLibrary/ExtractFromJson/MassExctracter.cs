@@ -1,5 +1,7 @@
 ﻿using ExtractLibrary.Const;
+using ExtractLibrary.Models;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using NUnit.Framework;
 using SpecFlowPdfReader.Helpers;
 
@@ -26,7 +28,7 @@ namespace ExtractLibrary.ExtractFromJson
             return null;
         }
 
-        public (int,int,List<string>,List<string>) CountElementsTable()
+        public (int, int, List<string>, List<string>) CountElementsTable()
         {
             string jsonContent = File.ReadAllText(jsonResut);
             Root myDeserializedClass = JsonConvert.DeserializeObject<Root>(jsonContent);
@@ -61,13 +63,12 @@ namespace ExtractLibrary.ExtractFromJson
             return (tableHeaderCount, headerCount, textTableHeaderList, textHeaderList);
         }
 
-        public (int,List<string>) CountElementsCheckBox()
+        public (int, List<string>) CountElementsCheckBox()
         {
             string jsonContent = File.ReadAllText(jsonResut);
             Root myDeserializedClass = JsonConvert.DeserializeObject<Root>(jsonContent);
             int checkBoxCount = 0;
             List<string> TextCheckBoxList = new List<string>();
-
 
             foreach (var checkBoxElement in myDeserializedClass.elements.Where(e => e.Path.Contains(PdfCheckPaths.pdfDoc) && e.TextSize != 0))
             {
@@ -87,6 +88,39 @@ namespace ExtractLibrary.ExtractFromJson
             }
             return (checkBoxCount, TextCheckBoxList);
         }
+
+        public (int, List<string>, List<string>) CountElementFont(string FontType)
+        {
+            string jsonContent = File.ReadAllText(jsonResut);
+            Root myDeserializedClass = JsonConvert.DeserializeObject<Root>(jsonContent);
+            int fontTypeCount = 0;
+            string fontInfo;
+            List<string> TextFontList = new List<string>();
+            List<string> TextFontTypeList = new List<string>();
+
+            foreach (var textFontElement in myDeserializedClass.elements.Where(e => e.TextSize != 0))
+            {
+                try
+                {
+                    fontInfo = textFontElement.Font.font_type.ToString();
+
+                    fontTypeCount++;
+                    //"TrueType"
+                    if (fontInfo == FontType)
+                    {
+                        TextFontList.Add(textFontElement.Text);
+                        TextFontTypeList.Add(textFontElement.Font.font_type.ToString());
+                    }
+                }
+                catch (Exception ex)
+                {
+                    continue;
+                }
+            }
+
+            return (fontTypeCount, TextFontList, TextFontTypeList);
+        }
+
 
         public (int, List<string>) CountElementsSectionParagraph()
         {

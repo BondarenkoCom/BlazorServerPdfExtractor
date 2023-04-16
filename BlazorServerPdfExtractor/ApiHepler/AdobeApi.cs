@@ -15,30 +15,34 @@ namespace BlazorServerPdfExtractor.ApiHelper
 
         private static readonly HttpClient httpClient = new HttpClient();
 
-        public async Task<string> GetAccess()
+        public async Task<DateTime> GetExpirationDateAsync()
         {
-
-            var accessToken = await GetAccessTokenAsync(ClientId, ClientSecret);
-            return accessToken;
+            (string accessToken, DateTime expirationDate) = await GetAccessTokenAsync(ClientId, ClientSecret);
+            return expirationDate;
         }
 
-        public static async Task<string> GetAccessTokenAsync(string clientId, string clientSecret)
+        private static async Task<(string, DateTime)> GetAccessTokenAsync(string clientId, string clientSecret)
         {
-            string tokenUrl = "https://ims-na1.adobelogin.com/ims/token";
+            string tokenUrl = "https://ims-na1.adobelogin.com/ims/token/v1";
             var content = new FormUrlEncodedContent(new[]
             {
                 new KeyValuePair<string, string>("client_id", clientId),
                 new KeyValuePair<string, string>("client_secret", clientSecret),
-                new KeyValuePair<string, string>("grant_type", "client_credentials")
+                new KeyValuePair<string, string>("grant_type", "client_credentials"),
+                new KeyValuePair<string, string>("scope", "https://ims-na1.adobelogin.com/s/ent_documentcloud_sdk")
             });
 
-            var response = await httpClient.PostAsync(tokenUrl, content);
+            HttpResponseMessage response = await httpClient.PostAsync(tokenUrl, content);
             response.EnsureSuccessStatusCode();
-            var jsonResponse = await response.Content.ReadAsStringAsync();
+            string jsonResponse = await response.Content.ReadAsStringAsync();
 
-            var json = JObject.Parse(jsonResponse);
-            Console.WriteLine(json["access_token"].ToString());
-            return json["access_token"].ToString();
+            JObject json = JObject.Parse(jsonResponse);
+            string accessToken = json["access_token"].ToString();
+
+            int expiresIn = json.Value<int>("expires_in");
+            DateTime expirationDate = DateTime.UtcNow.AddSeconds(expiresIn);
+
+            return (accessToken, expirationDate);
         }
     }
 }
