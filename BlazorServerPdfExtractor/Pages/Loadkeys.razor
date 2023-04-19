@@ -1,23 +1,59 @@
 ﻿@page "/loadkeys"
-@using BlazorServerPdfExtractor.ApiHelper
 @using ExtractLibrary.Helpers
 @using SpecFlowPdfReader.Helpers
 
-<h3>loadkeys</h3>
+<h3 style="text-align: center; font-family: Arial, sans-serif; margin-bottom: 1rem;">Load Keys</h3>
 
 <style>
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #f0f0f0;
+    }
+
     .form-container {
         max-width: 600px;
-        margin: 0 auto;
-        padding: 20px;
+        margin: 2rem auto;
+        padding: 2rem;
+        background-color: #ffffff;
+        border-radius: 5px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
     }
 
     .input-container {
-        margin-bottom: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    label {
+        display: block;
+        font-weight: bold;
+        margin-bottom: .5rem;
+    }
+
+    input[type="text"], textarea {
+        width: 100%;
+        border: 1px solid #ccc;
+        padding: .5rem;
+        font-size: 16px;
+        border-radius: 3px;
     }
 
     textarea {
-        width: 100%;
+        resize: none;
+    }
+
+    button {
+        background-color: #007bff;
+        border: none;
+        color: #ffffff;
+        padding: .75rem 1.5rem;
+        font-size: 16px;
+        border-radius: 3px;
+        cursor: pointer;
+        margin-right: .5rem;
+    }
+
+    button:hover {
+        background-color: #0056b3;
     }
 </style>
 
@@ -46,13 +82,12 @@
     <button @onclick="UpdateKeys">Update keys</button>
     <br>
     <br>
-    <textarea rows="15" @bind="MyText"></textarea>
+    <textarea rows="15" cols="40" @bind="MyText"></textarea>
 </div>
 
 
 @code {
     CheckAdobe _checkAdobe = new CheckAdobe();
-    AdobeApi _adobeApi = new AdobeApi();
     private string WorkPath;
     private string MyText;
     private string ClientIdInput;
@@ -65,15 +100,12 @@
     public async void ReadKeysAdobe()
     {
         var res = await _checkAdobe.GetAdobeKeysValue();
-        //var adobeExpDate = await _adobeApi.GetExpirationDateAsync();
-        var adobeExpDate = "Null";
         MyText =
-        ($"Expiration date -{adobeExpDate} Work path - {res.Item1} \n client ID - {res.Item2} \n client Secret - {res.Item3} \n adobe organizationId - {res.Item4} \n adobeAccountId - {res.Item5} \n ------ \n private key text - {res.Item7} \n");
+        ($"Work path - {res.Item1} \n client ID - {res.Item2} \n client Secret - {res.Item3} \n adobe organizationId - {res.Item4} \n adobeAccountId - {res.Item5} \n ------ \n private key text - {res.Item7} \n");
     }
 
     public async void UpdateKeys()
     {
         JsonHelper.UpdateAdobeKeys(ClientIdInput, ClientSecretInput, OrganizationIdInput, AccountIdInput, PrivateKeyTextInput);
-
     }
 }

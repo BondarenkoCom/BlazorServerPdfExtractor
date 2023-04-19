@@ -81,7 +81,6 @@ namespace ExtractLibrary.Helpers
 
             // Close the PDF document
             document.Close();
-
         }
 
         public void GeneratePDFFromTitle(

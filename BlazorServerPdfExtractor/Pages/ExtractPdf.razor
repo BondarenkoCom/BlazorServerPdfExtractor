@@ -9,7 +9,7 @@
 @using SpecFlowPdfReader.Helpers
 @inject IWebHostEnvironment env
 
-<h3>Extract PDF</h3>
+<h3 style="text-align: center; font-family: Arial, sans-serif; margin-bottom: 1rem;">Extract PDF</h3>
 
 <div class="container">
     <div class="button-row">
@@ -44,9 +44,14 @@
     </div>
 }
 
+@if (HasError)
+{
+    <div class="alert alert-danger" role="alert">
+        @ErrorAlert
+    </div>
+}
 
 <iframe class="pdf-frame" src="@($"/reports/report.pdf?unique={uniqueKey}#zoom=150")" width="100%" height="800px"></iframe>
-
 
 <style>
     .container {
@@ -139,6 +144,8 @@
     private string _reportPath;
     private string _tempFoldePath;
     private bool FileSelected { get; set; } = false;
+    private bool HasError { get; set; } = false;
+    private string ErrorAlert { get; set; }
 
     private async Task HandleFileSelected(InputFileChangeEventArgs e)
     {
@@ -227,7 +234,18 @@
             this.StateHasChanged();
 
             ExtractPDF extractPDF = new ExtractPDF();
-            await extractPDF.ExtractTextFromPDF(pdfName);
+            string result = await extractPDF.ExtractTextFromPDF(pdfName);
+
+            if (result != "Success")
+            {
+                ErrorAlert = $"Error: {result}";
+                HasError = true;
+            }
+            else
+            {
+                HasError = false;
+            }
+
 
             IsExtracting = false;
             ViewButtonEnabled = true; // Update the property here

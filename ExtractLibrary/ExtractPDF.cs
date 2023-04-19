@@ -15,7 +15,7 @@ namespace ExtractLibrary
         private string? jsonResut = JsonHelper.GetValues().jsonPath;
         readonly ZipExtractor resExtract = new ZipExtractor();
 
-        public async Task ExtractTextFromPDF(string pdfFilePath)
+        public async Task<string> ExtractTextFromPDF(string pdfFilePath)
         {
             try
             {
@@ -46,19 +46,18 @@ namespace ExtractLibrary
                 result.SaveAs(zipResult);
 
                 resExtract.ExtractZip(zipResult);
+                return "Success";
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error - {ex.Message}");
+                return ex.Message.ToString();
             }
         }
 
-
-        public async Task<string> ExtractTextFromPDFForCompare(string pdfFilePath)
+        public async Task<Tuple<string, string>> ExtractTextFromPDFForCompare(string pdfFilePath)
         {
             try
             {
-
                 Adobe.PDFServicesSDK.auth.Credentials credentials = Adobe.PDFServicesSDK.auth.Credentials.ServiceAccountCredentialsBuilder()
             .FromFile(credentialsFilePath)
             .Build();
@@ -85,12 +84,12 @@ namespace ExtractLibrary
                 result.SaveAs(zipResult);
 
                 string randomString = RandomStringName.GenerateRandomString(5);
-                var path =  resExtract.ExtractZipCopy(zipResult , randomString);
-                return path;
+                var path = resExtract.ExtractZipCopy(zipResult , randomString);
+                return Tuple.Create(path, "Success");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error - {ex.Message}");
+                return Tuple.Create<string, string>(null, $"Error - {ex.Message}");
             }
             return null;
         }

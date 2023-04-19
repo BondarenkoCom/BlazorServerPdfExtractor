@@ -9,7 +9,7 @@
 @using SpecFlowPdfReader.Helpers
 @inject IWebHostEnvironment env
 
-<h3>Extract text by font</h3>
+<h3 style="text-align: center; font-family: Arial, sans-serif; margin-bottom: 1rem;">Extract text by font</h3>
 
 <div class="container">
     <div class="button-row">
@@ -25,7 +25,6 @@
         <textarea class="form-control" rows="1" cols="70" @bind="MyText"></textarea>
     </div>
 </div>
-
 
 @if (IsLoading)
 {
@@ -48,12 +47,17 @@
     </div>
 }
 
-<iframe class ="pdf-frame" src="@($"/reports/report.pdf?unique={uniqueKey}#zoom=150")" width="100%" height="800px"></iframe>
+@if (HasError)
+{
+    <div class="alert alert-danger" role="alert">
+        @ErrorAlert
+    </div>
+}
 
-
+<iframe class="pdf-frame" src="@($"/reports/report.pdf?unique={uniqueKey}#zoom=150")" width="100%" height="800px"></iframe>
 
 <style>
-     .container {
+    .container {
         display: flex;
         flex-direction: column;
         align-items: flex-start;
@@ -139,6 +143,8 @@
     private bool FileSelected { get; set; } = false;
     private string _tempFoldePath;
     private string FontType = "TrueType";
+    private bool HasError { get; set; } = false;
+    private string ErrorAlert { get; set; }
 
     private async Task HandleFileSelected(InputFileChangeEventArgs e)
     {
@@ -151,7 +157,6 @@
 
         foreach (var file in selectedFiles)
         {
-
             var path = $"{targetFolderPath}\\{file.Name}";
             FilePath = path;
             _fileName = file.Name;
@@ -170,7 +175,6 @@
                     await fs.WriteAsync(buffer, 0, bytesRead);
                 }
             }
-
             fs.Close();
         }
         IsLoading = false;
@@ -178,11 +182,10 @@
         this.StateHasChanged();
     }
 
-
     private async void CleanReport()
     {
         _reportPath = Path.Combine(env.WebRootPath, "reports", "report.pdf");
-         _tempFoldePath = Path.Combine("tempZip");
+        _tempFoldePath = Path.Combine("tempZip");
 
         try
         {
@@ -192,8 +195,7 @@
                 RemoveIframeSource(); // delete Iframe source
             }
 
-             DirectoryInfo tempFolder = new DirectoryInfo(_tempFoldePath);
-
+            DirectoryInfo tempFolder = new DirectoryInfo(_tempFoldePath);
 
             if (tempFolder.Exists)
             {
@@ -217,7 +219,6 @@
 
     private async void ButtonClicked()
     {
-
         string pdfName = FilePath;
         MyText = $"{pdfName} - begin extract";
 
@@ -227,12 +228,22 @@
             this.StateHasChanged();
 
             ExtractPDF extractPDF = new ExtractPDF();
-            await extractPDF.ExtractTextFromPDF(pdfName);
+            //await extractPDF.ExtractTextFromPDF(pdfName);
+            string result = await extractPDF.ExtractTextFromPDF(pdfName);
+
+            if (result != "Success")
+            {
+                ErrorAlert = $"Error: {result}";
+                HasError = true;
+            }
+            else
+            {
+                HasError = false;
+            }
 
             IsExtracting = false;
             ViewButtonEnabled = true; // Update the property here
             this.StateHasChanged();
-
         }
         catch (Exception ex)
         {

@@ -8,7 +8,7 @@
 @using System.Text
 @inject IWebHostEnvironment env
 
-<h3>ComparePDF</h3>
+<h3 style="text-align: center; font-family: Arial, sans-serif; margin-bottom: 1rem;">Compare PDF</h3>
 
 <div class="container">
     <div class="button-row">
@@ -33,6 +33,13 @@
 {
     <div class="alert alert-primary" role="alert">
         Comparing...
+    </div>
+}
+
+@if (HasError)
+{
+    <div class="alert alert-danger" role="alert">
+        @ErrorAlert
     </div>
 }
 
@@ -121,7 +128,8 @@
     private string pdfSrc { get; set; }
     private string _reportPath;
     private string _tempFoldePath;
-
+    private bool HasError { get; set; } = false;
+    private string ErrorAlert { get; set; }
 
     private async Task OnFileSelectedFirst(InputFileChangeEventArgs e)
     {
@@ -227,9 +235,21 @@
             //Dictionary<string, (string, string)> differences = comparingPDF.TestCompare(
             //   resultFirst, @"D:\source\BlazorServerPdfExtractor\BlazorServerPdfExtractor\JsonResults\PQI5P.json");
 
-            Dictionary<string, (string, string)> differences = comparingPDF.TestCompare(
-               resultFirst, resultSecond);
+            //Dictionary<string, (string, string)> differences = comparingPDF.TestCompare(
+            //   resultFirst, resultSecond);
 
+            Dictionary<string, (string, string)> differences = comparingPDF.TestCompare(
+                resultFirst.Item1, resultSecond.Item1);
+
+            if (resultFirst.Item2 != "Success" && resultSecond.Item2 != "Success")
+            {
+                ErrorAlert = $"Error: {resultFirst.Item2}";
+                HasError = true;
+            }
+            else
+            {
+                HasError = false;
+            }
 
             if (differences == null || differences.Count == 0)
             {
