@@ -16,9 +16,10 @@
         <InputFile OnChange="@OnFileSelectedSecond" MaxFileSize="104857600" accept="application/pdf" disabled="@IsCompare" />
         <button class="btn btn-primary" @onclick="ComparePDFfiles" disabled="@IsCompare">Compare PDF</button>
         <button class="btn btn-danger" @onclick="CleanReport">Clean report</button>
+        <button class="btn btn-danger" @onclick="CleanJson">Clean JsonFile</button>
     </div>
     <div>
-        <textarea class="form-control text-area-spacing" rows="1" cols="80" @bind="MyText"></textarea>
+        <div class="output-text" id="outputText">@OutputText</div>
     </div>
 </div>
 
@@ -57,6 +58,16 @@
         display: flex;
         gap: 10px;
         margin-bottom: 10px;
+    }
+
+    .output-text {
+    margin-bottom: 20px;
+    padding: 10px;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    font-family: Arial, sans-serif;
+    white-space: pre-wrap;
     }
 
     .form-control {
@@ -130,6 +141,8 @@
     private string _tempFoldePath;
     private bool HasError { get; set; } = false;
     private string ErrorAlert { get; set; }
+    private string OutputText { get; set; }
+
 
     private async Task OnFileSelectedFirst(InputFileChangeEventArgs e)
     {
@@ -227,16 +240,10 @@
             ExtractPDF extractPDFCopySecond = new ExtractPDF();
             var resultSecond = await extractPDFCopySecond.ExtractTextFromPDFForCompare(pdfNameSecond);
 
-            Console.WriteLine($"First path - {resultFirst} \n  Second path - {resultSecond}");
+            Console.WriteLine($"First path - {resultFirst} \nSecond path - {resultSecond}");
+            OutputText = $"First path - {resultFirst} \nSecond path - {resultSecond}";
 
             ComparingPDF comparingPDF = new ComparingPDF();
-
-            //Debug
-            //Dictionary<string, (string, string)> differences = comparingPDF.TestCompare(
-            //   resultFirst, @"D:\source\BlazorServerPdfExtractor\BlazorServerPdfExtractor\JsonResults\PQI5P.json");
-
-            //Dictionary<string, (string, string)> differences = comparingPDF.TestCompare(
-            //   resultFirst, resultSecond);
 
             Dictionary<string, (string, string)> differences = comparingPDF.TestCompare(
                 resultFirst.Item1, resultSecond.Item1);
@@ -282,18 +289,18 @@
             }
             IsCompare = false;
             this.StateHasChanged();
-
-            FolderContent.ClearFolderContents(jsonFolder);
         }
         catch (Exception ex)
         {
             MyText = $"Error: {ex.Message}";
             IsCompare = false;
             this.StateHasChanged();
-
-            //Clear Garbage
-            FolderContent.ClearFolderContents(jsonFolder);
         }
+    }
+
+    private async void CleanJson()
+    {
+        FolderContent.ClearFolderContents(jsonFolder);
     }
 
     private async void CleanReport()

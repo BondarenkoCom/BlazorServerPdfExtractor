@@ -228,7 +228,6 @@
             this.StateHasChanged();
 
             ExtractPDF extractPDF = new ExtractPDF();
-            //await extractPDF.ExtractTextFromPDF(pdfName);
             string result = await extractPDF.ExtractTextFromPDF(pdfName);
 
             if (result != "Success")
