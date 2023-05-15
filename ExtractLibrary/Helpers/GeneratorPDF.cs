@@ -175,56 +175,60 @@ namespace ExtractLibrary.Helpers
         }
 
 
-        public void GeneratePDFForCompare(string? title, string? titleSecond, string? date, string? difference, string? outputPath)
+        public void GeneratePDFForCompare(string? titleFirst, string? titleSecond, string? titleThird, string? date, string? difference, string? outputPath)
         {
-            if (string.IsNullOrEmpty(title))
+            if (string.IsNullOrEmpty(titleFirst) || string.IsNullOrEmpty(titleSecond) || string.IsNullOrEmpty(titleThird))
             {
-                title = "Report";
+                titleFirst = "First Report";
+                titleSecond = "Second Report";
+                titleThird = "Third Report";
                 difference = "Empty";
                 date = "Empty";
             }
 
             string htmlContent = $@"
-        <!DOCTYPE html>
-        <html>
-            <head>
-                <style>
-                    body {{
-                        font-family: Arial, sans-serif;
-                        font-size: 14px;
-                        line-height: 1.6;
-                    }}
-                    h1 {{
-                        font-size: 24px;
-                    }}
-                    h2 {{
-                        font-size: 18px;
-                        color: #444;
-                        margin-bottom: 20px;
-                    }}
-                    .difference {{
-                        margin-bottom: 20px;
-                    }}
-                    .difference-key {{
-                        font-weight: bold;
-                    }}
-                    .difference-file1,
-                    .difference-file2 {{
-                        margin-left: 20px;
-                    }}
-                </style>
-            </head>
-            <body>
-                <h1>First file: {title}</h1>
-                <h1>Second file: {titleSecond}</h1>
-                <h2>{date}</h2>
-                {difference}
-            </body>
-        </html>";
+                            <!DOCTYPE html>
+                    <html>
+                        <head>
+                            <style>
+                                body {{
+                                    font-family: Arial, sans-serif;
+                                    font-size: 14px;
+                                    line-height: 1.6;
+                                }}
+                                h1 {{
+                                    font-size: 24px;
+                                }}
+                                h2 {{
+                                    font-size: 18px;
+                                    color: #444;
+                                    margin-bottom: 20px;
+                                }}
+                                .difference {{
+                                    margin-bottom: 20px;
+                                    background-color: #f8f8f8; /* Add a background color */
+                                    padding: 10px; /* Add some padding */
+                                    border-radius: 5px; /* Add some border radius for a softer look */
+                                }}
+                                .difference-key {{
+                                    font-weight: bold;
+                                }}
+                                .difference-file1,
+                                .difference-file2,
+                                .difference-file3 {{
+                                    margin-left: 20px;
+                                }}
+                            </style>
+                        </head>
+                        <body>
+                            <h1 style='color: green; background-color: #e8f5e9;'>First file: {titleFirst}</h1>
+                            <h1 style='color: blue; background-color: #e3f2fd;'>Second file: {titleSecond}</h1>
+                            <h1 style='color: red; background-color: #ffebee;'>Third file: {titleThird}</h1>
+                            <h2>{date}</h2>
+                            {difference}
+                        </body>
+                    </html>";
 
-
-
-            // Configure the HTML to PDF conversion
             HtmlToPdf converter = new HtmlToPdf();
 
             converter.Options.MarginTop = 20;
@@ -233,18 +237,12 @@ namespace ExtractLibrary.Helpers
             converter.Options.MarginLeft = 20;
             converter.Options.PdfPageSize = PdfPageSize.A4;
             converter.Options.PdfPageOrientation = PdfPageOrientation.Portrait;
-            //converter.Options.AutoFitWidth = HtmlToPdfPageFitMode.ShrinkOnly;
-            //converter.Options.AutoFitHeight = HtmlToPdfPageFitMode.ShrinkOnly;
 
-            // Perform the conversion
             PdfDocument document = converter.ConvertHtmlString(htmlContent);
 
-            // Save the PDF document to the output path
             document.Save(outputPath);
 
-            // Close the PDF document
             document.Close();
-
         }
     }
 }

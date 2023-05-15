@@ -7,6 +7,26 @@ namespace ExtractLibrary
     [TestFixture]
     public class ComparingPDF
     {
+        public Dictionary<string, (string, string, string)> TestCompareThree(string pathFirst, string pathSecond, string pathThird)
+        {
+            var differences12 = TestCompare(pathFirst, pathSecond);
+            var differences13 = TestCompare(pathFirst, pathThird);
+
+            var allKeys = new HashSet<string>(differences12.Keys.Union(differences13.Keys));
+
+            var differences = new Dictionary<string, (string, string, string)>();
+            foreach (var key in allKeys)
+            {
+                var val1 = differences12.ContainsKey(key) ? differences12[key].Item1 : null;
+                var val2 = differences12.ContainsKey(key) ? differences12[key].Item2 : null;
+                var val3 = differences13.ContainsKey(key) ? differences13[key].Item2 : null;
+
+                differences[key] = (val1, val2, val3);
+            }
+
+            return differences;
+        }
+
         public Dictionary<string, (string, string)> TestCompare(string pathFirst, string pathSecond)
         {
             var _readJsonFileHelper = new ReadJsonFileHelper();
@@ -16,7 +36,7 @@ namespace ExtractLibrary
             JObject jsonFile1 = _readJsonFileHelper.ReadJsonFile(jsonFilePath1);
             JObject jsonFile2 = _readJsonFileHelper.ReadJsonFile(jsonFilePath2);
 
-            Dictionary<string, (string, string)> differences 
+            Dictionary<string, (string, string)> differences
                 = new Dictionary<string, (string, string)>();
             CompareTokens(jsonFile1, jsonFile2, differences);
 
@@ -36,6 +56,10 @@ namespace ExtractLibrary
 
                 foreach (var prop in obj1.Properties())
                 {
+                    // Ignore the specified properties
+                    if (prop.Name.Equals("extended_metadata") || prop.Name.Equals("Bounds") || prop.Name.Equals("Extended Bounds"))
+                        continue;
+
                     var propPath = !string.IsNullOrEmpty(path) ? $"{path}.{prop.Name}" : prop.Name;
                     if (obj2.ContainsKey(prop.Name))
                     {
@@ -49,10 +73,15 @@ namespace ExtractLibrary
 
                 foreach (var prop in obj2.Properties())
                 {
+                    // Ignore the specified properties
+                    if (prop.Name.Equals("extended_metadata") || prop.Name.Equals("Bounds") 
+                        || prop.Name.Equals("Extended Bounds") || prop.Name.Equals("ClipBounds"))
+                        continue;
+
                     var propPath = !string.IsNullOrEmpty(path) ? $"{path}.{prop.Name}" : prop.Name;
                     if (!obj1.ContainsKey(prop.Name))
                     {
-                        differences[propPath] = (null, prop.Value.ToString());
+                        differences[propPath] = (null, prop.Value.ToString() + " (No such element in file 1)");
                     }
                 }
             }
@@ -83,6 +112,10 @@ namespace ExtractLibrary
             else if (!JToken.DeepEquals(token1, token2))
             {
                 differences[path] = (token1.ToString(), token2.ToString());
+            }
+            else
+            {
+                differences[path] = (token1.ToString(), "No differences with file 1");
             }
         }
     }

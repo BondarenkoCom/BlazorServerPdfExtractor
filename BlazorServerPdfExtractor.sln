@@ -9,6 +9,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ExtractLibrary", "ExtractLi
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ExtractTextTableInfoFromPDF", "PDFServices.NET.SDK.Samples-master\ExtractTextTableInfoFromPDF\ExtractTextTableInfoFromPDF.csproj", "{B105726B-5C4C-4788-AF31-671B23347083}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ExtractTextTableInfoWithFiguresTablesRenditionsFromPDF", "PDFServices.NET.SDK.Samples-master\ExtractTextTableInfoWithFiguresTablesRenditionsFromPDF\ExtractTextTableInfoWithFiguresTablesRenditionsFromPDF.csproj", "{5DAF2933-85CC-42CA-8026-F14EB5B7AA56}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{B105726B-5C4C-4788-AF31-671B23347083}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B105726B-5C4C-4788-AF31-671B23347083}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B105726B-5C4C-4788-AF31-671B23347083}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5DAF2933-85CC-42CA-8026-F14EB5B7AA56}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5DAF2933-85CC-42CA-8026-F14EB5B7AA56}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5DAF2933-85CC-42CA-8026-F14EB5B7AA56}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5DAF2933-85CC-42CA-8026-F14EB5B7AA56}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

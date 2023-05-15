@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <PackageReference Include="Adobe.PDFServicesSDK" Version="3.2.0" />
+    <PackageReference Include="Blazored.Modal" Version="7.1.0" />
     <PackageReference Include="DinkToPdf" Version="1.0.8" />
     <PackageReference Include="Microsoft.IdentityModel.Logging" Version="6.29.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />

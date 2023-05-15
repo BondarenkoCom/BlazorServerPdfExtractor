@@ -8,18 +8,65 @@
 @using System.Text
 @inject IWebHostEnvironment env
 
-<h3 style="text-align: center; font-family: Arial, sans-serif; margin-bottom: 1rem;">Compare PDF</h3>
+<h3 class="header">Compare PDF</h3>
+
+<div class="modal @ModalClass" id="myModal">
+    <div class="modal-content">
+        <span class="close" @onclick="ToggleModal">&times;</span>
+        <p>
+            After you've uploaded all three files, you can click the "Compare PDF" button to start the comparison process.<br>
+            The application will read each PDF and compare the text content.
+            <br>The comparison includes checking for text that appears in one file but not in others, differences in the order of text, and so on.
+        </p>
+    </div>
+</div>
 
 <div class="container">
     <div class="button-row">
-        <InputFile OnChange="@OnFileSelectedFirst" MaxFileSize="104857600" accept="application/pdf" disabled="@IsCompare" />
-        <InputFile OnChange="@OnFileSelectedSecond" MaxFileSize="104857600" accept="application/pdf" disabled="@IsCompare" />
-        <button class="btn btn-primary" @onclick="ComparePDFfiles" disabled="@IsCompare">Compare PDF</button>
+        <div class="file-input-container">
+            <InputFile OnChange="@(e => OnFileSelected(e, 1))" MaxFileSize="104857600" accept="application/pdf" disabled="@IsCompare" />
+            <label for="file-upload" class="custom-file-upload">"Upload PDF 1" is the main file for comparison with PDF 2 and PDF 3.</label>
+            @if (isFile1Extracted && !IsLoading)
+            {
+                <div class="alert alert-success upload-success">Success Extract</div>
+            }
+            @if (extractError1 != "")
+            {
+                <div class="alert alert-danger upload-error">@extractError1</div>
+            }
+        </div>
+        <div class="file-input-container">
+            <InputFile OnChange="@(e => OnFileSelected(e, 2))" MaxFileSize="104857600" accept="application/pdf" disabled="@IsCompare" />
+            <label for="file-upload" class="custom-file-upload">Upload PDF 2</label>
+            @if (isFile1Extracted && !IsLoading)
+            {
+                <div class="alert alert-success upload-success">Success Extract</div>
+            }
+            @if (extractError1 != "")
+            {
+                <div class="alert alert-danger upload-error">@extractError1</div>
+            }
+        </div>
+        <div class="file-input-container">
+            <InputFile OnChange="@(e => OnFileSelected(e, 3))" MaxFileSize="104857600" accept="application/pdf" disabled="@IsCompare" />
+            <label for="file-upload" class="custom-file-upload">Upload PDF 3</label>
+            @if (isFile1Extracted && !IsLoading)
+            {
+                <div class="alert alert-success upload-success">Success Extract</div>
+            }
+            @if (extractError1 != "")
+            {
+                <div class="alert alert-danger upload-error">@extractError1</div>
+            }
+        </div>
+    </div>
+    <div class="button-row">
+        <div class="info-compare-container">
+            <button class="btn btn-info" @onclick="ToggleModal">Info</button>
+            <button class="btn btn-primary" @onclick="ComparePDFfiles" disabled="@IsCompare">Compare PDF</button>
+        </div>
         <button class="btn btn-danger" @onclick="CleanReport">Clean report</button>
         <button class="btn btn-danger" @onclick="CleanJson">Clean JsonFile</button>
-    </div>
-    <div>
-        <div class="output-text" id="outputText">@OutputText</div>
     </div>
 </div>
 
@@ -44,34 +91,343 @@
     </div>
 }
 
+@if (Report == "Passed" && !IsLoading && !IsCompare)
+{
+    <div class="alert alert-success" role="alert">
+        No differences were found in the compared PDFs.
+    </div>
+}
+
 <iframe class="pdf-frame" src="@($"/reports/report.pdf?unique={uniqueKey}#zoom=150")" width="100%" height="800px"></iframe>
+
+@code {
+    private string _message = "";
+    private bool IsLoading { get; set; }
+    private string _fileNameFirst;
+    private string _fileNameSecond;
+    private string _fileNameThird;
+    private string _fileSize;
+    private string FilePathCopyFirst { get; set; }
+    private string FilePathCopySecond { get; set; }
+    private string FilePathCopyThird { get; set; }
+    private string MyText { get; set; }
+    private bool IsCompare { get; set; }
+    private string Report { get; set; }
+    private string jsonFolder = JsonHelper.GetFolderJsonResult();
+    private string uniqueKey { get; set; } = Guid.NewGuid().ToString();
+    private string pdfSrc { get; set; }
+    private string _reportPath;
+    private string _tempFoldePath;
+    private bool HasError { get; set; } = false;
+    private string ErrorAlert { get; set; }
+    private string OutputText { get; set; }
+    private bool isFile1Uploaded { get; set; } = false;
+    private bool isFile2Uploaded { get; set; } = false;
+    private bool isFile3Uploaded { get; set; } = false;
+    private bool isFile1Extracted { get; set; } = false;
+    private bool isFile2Extracted { get; set; } = false;
+    private bool isFile3Extracted { get; set; } = false;
+    private string extractError1 { get; set; } = "";
+    private string extractError2 { get; set; } = "";
+    private string extractError3 { get; set; } = "";
+
+    private string ModalClass { get; set; } = "modal-hidden";
+
+    private async void ComparePDFfiles()
+    {
+        DateTime now = DateTime.Now;
+        string pdfNameFirst = FilePathCopyFirst;
+        string pdfNameSecond = FilePathCopySecond;
+        string pdfNameThird = FilePathCopyThird;
+        MyText = $"{pdfNameFirst} - begin extract first PDF";
+        MyText = $"{pdfNameSecond} - begin extract second PDF";
+        MyText = $"{pdfNameThird} - begin extract third PDF";
+        string fileNameFirst = _fileNameFirst;
+        string fileNameSecond = _fileNameSecond;
+        string fileNameThird = _fileNameThird;
+        string dateTime = now.ToString();
+
+        try
+        {
+            IsCompare = true;
+            this.StateHasChanged();
+
+            ExtractPDF extractPDFCopyFirst = new ExtractPDF();
+            var resultFirst = await extractPDFCopyFirst.ExtractTextFromPDFForCompare(pdfNameFirst);
+            if (resultFirst.Item2 == "Success")
+            {
+                isFile1Extracted = true;
+            }
+            else
+            {
+                extractError1 = resultFirst.Item2;
+            }
+
+            ExtractPDF extractPDFCopySecond = new ExtractPDF();
+            var resultSecond = await extractPDFCopySecond.ExtractTextFromPDFForCompare(pdfNameSecond);
+            if (resultSecond.Item2 == "Success")
+            {
+                isFile2Extracted = true;
+            }
+            else
+            {
+                extractError2 = resultSecond.Item2;
+            }
+
+            ExtractPDF extractPDFCopyThird = new ExtractPDF();
+            var resultThird = await extractPDFCopyThird.ExtractTextFromPDFForCompare(pdfNameThird);
+            if (resultThird.Item2 == "Success")
+            {
+                isFile3Extracted = true;
+            }
+            else
+            {
+                extractError3 = resultThird.Item2;
+            }
+
+            Console.WriteLine($"First path - {resultFirst} \nSecond path - {resultSecond} \nThird path - {resultThird}");
+            OutputText = $"First path - {resultFirst} \nSecond path - {resultSecond} \nThird path - {resultThird}";
+
+            ComparingPDF comparingPDF = new ComparingPDF();
+
+            Dictionary<string, (string, string, string)> differences = comparingPDF.TestCompareThree(
+                resultFirst.Item1, resultSecond.Item1, resultThird.Item1);
+
+            if (resultFirst.Item2 != "Success" || resultSecond.Item2 != "Success" || resultThird.Item2 != "Success")
+            {
+                ErrorAlert = $"Error: {resultFirst.Item2}";
+                HasError = true;
+            }
+            else
+            {
+                HasError = false;
+            }
+
+            if (differences == null || differences.Count == 0)
+            {
+                Report = "Passed";
+            }
+            else
+            {
+                StringBuilder reportBuilder = new StringBuilder();
+
+                foreach (var diff in differences)
+                {
+                    reportBuilder.AppendLine($"<div class=\"difference\">");
+                    reportBuilder.AppendLine($"  <h3 class=\"difference-key\">Result Differences - {diff.Key}:</h3>");
+                    reportBuilder.AppendLine($"  <div class=\"difference-file1\"><span style='color: green; font-weight: bold;'>{_fileNameFirst}:</span> <span style='background-color: #e8f5e9;'>{diff.Value.Item1}</span></div>");
+                    reportBuilder.AppendLine($"  <div class=\"difference-file2\"><span style='color: blue; font-weight: bold;'>{_fileNameSecond}:</span> <span style='background-color: #e3f2fd;'>{diff.Value.Item2}</span></div>");
+                    reportBuilder.AppendLine($"  <div class=\"difference-file3\"><span style='color: red; font-weight: bold;'>{_fileNameThird}:</span> <span style='background-color: #ffebee;'>{diff.Value.Item3}</span></div>");
+                    reportBuilder.AppendLine($"</div>");
+                }
+
+                GeneratorPDF generatorPDF = new GeneratorPDF();
+                string outputPath = JsonHelper.ReportPathName(env.WebRootPath);
+
+                try
+                {
+                    generatorPDF.GeneratePDFForCompare(_fileNameFirst, _fileNameSecond, _fileNameThird, dateTime, reportBuilder.ToString(), outputPath);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error message - {ex.Message}");
+                }
+                pdfSrc = outputPath; // Update the pdfSrc variable with the output path
+                this.StateHasChanged();
+
+                uniqueKey = Guid.NewGuid().ToString(); // Update the uniqueKey variable to force a refresh
+                this.StateHasChanged();
+
+            }
+            IsCompare = false;
+            this.StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            MyText = $"Error: {ex.Message}";
+            IsCompare = false;
+            this.StateHasChanged();
+        }
+    }
+
+    private void ToggleModal()
+    {
+        ModalClass = ModalClass == "modal-hidden" ? "modal-visible" : "modal-hidden";
+    }
+
+    private async void CleanJson()
+    {
+        FolderContent.ClearFolderContents(jsonFolder);
+    }
+
+    private async void CleanReport()
+    {
+        _reportPath = Path.Combine(env.WebRootPath, "reports", "report.pdf");
+        _tempFoldePath = Path.Combine("tempZip");
+
+        try
+        {
+            if (File.Exists(_reportPath))
+            {
+                File.Delete(_reportPath);
+                RemoveIframeSource(); // delete Iframe source
+            }
+
+            DirectoryInfo tempFolder = new DirectoryInfo(_tempFoldePath);
+
+            if (tempFolder.Exists)
+            {
+                foreach (FileInfo file in tempFolder.GetFiles())
+                {
+                    file.Delete();
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            MyText = ex.Message;
+        }
+    }
+
+    private void RemoveIframeSource()
+    {
+        uniqueKey = Guid.NewGuid().ToString();
+        this.StateHasChanged(); // Update component
+    }
+
+    private async Task OnFileSelected(InputFileChangeEventArgs e, int copyNumber)
+    {
+        string targetFolderPath = JsonHelper.GetFolderTargetForExtract();
+        IReadOnlyList<IBrowserFile> selectedFiles;
+        selectedFiles = e.GetMultipleFiles();
+
+        IsLoading = true;
+        this.StateHasChanged();
+
+        foreach (var file in selectedFiles)
+        {
+            var pathCopy = $"{targetFolderPath}\\Copy{copyNumber}{file.Name}";
+            if (copyNumber == 1)
+            {
+                FilePathCopyFirst = pathCopy;
+                _fileNameFirst = file.Name;
+                isFile1Uploaded = true;
+            }
+            else if (copyNumber == 2)
+            {
+                FilePathCopySecond = pathCopy;
+                _fileNameSecond = file.Name;
+                isFile2Uploaded = true;
+            }
+            else
+            {
+                FilePathCopyThird = pathCopy;
+                _fileNameThird = file.Name;
+                isFile3Uploaded = true;
+            }
+            _fileSize = file.Size.ToString();
+
+            FileStream fs = File.Create(pathCopy);
+
+            const int bufferSize = 10 * 1024 * 1024; // 10 MB buffer size
+            byte[] buffer = new byte[bufferSize];
+
+            using (Stream stream = file.OpenReadStream(maxAllowedSize: 2000000))
+            {
+                int bytesRead;
+                while ((bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length)) > 0)
+                {
+                    await fs.WriteAsync(buffer, 0, bytesRead);
+                }
+            }
+
+            fs.Close();
+        }
+        IsLoading = false;
+        this.StateHasChanged();
+    }
+}
+
 
 <style>
     /* Existing styles */
     .container {
         display: flex;
         flex-direction: column;
-        align-items: flex-start;
+        align-items: center;
+        width: 100%;
+    }
+
+    .file-input-container {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .upload-success {
+        background-color: limegreen;
+        color: white;
+        padding: 5px;
+        margin-top: 10px;
+        border-radius: 3px;
+        box-shadow: 0 4px 6;
+        px 0 rgba(0, 0, 0, 0.2);
+        width: fit-content;
+    }
+
+    .info-compare-container {
+        display: flex;
+        justify-content: space-between;
+        width: auto;
+    }
+
+    .btn-info {
+        background-color: #3cb371;
+        border-color: #3cb371;
+    }
+
+    input[type=file] {
+        width: 100%;
+        padding: 10px;
+        font-size: 16px;
+        font-family: Arial, sans-serif;
     }
 
     .button-row {
         display: flex;
+        justify-content: space-around;
+        flex-wrap: wrap;
+        width: 100%;
         gap: 10px;
-        margin-bottom: 10px;
+        margin-bottom: 20px;
     }
 
     .output-text {
-    margin-bottom: 20px;
-    padding: 10px;
-    background-color: #f8f9fa;
-    border: 1px solid #dee2e6;
-    border-radius: 4px;
-    font-family: Arial, sans-serif;
-    white-space: pre-wrap;
+        margin-bottom: 20px;
+        padding: 10px;
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        font-family: Arial, sans-serif;
+        white-space: pre-wrap;
+    }
+
+    .header {
+        text-align: center;
+        font-family: Arial, sans-serif;
+        font-size: 24px;
+        color: #007bff;
+        font-weight: bold;
+        margin-bottom: 20px;
     }
 
     .form-control {
         margin-bottom: 12px;
+    }
+
+    .header, .btn, .custom-file-upload {
+        font-size: 16px;
+        font-family: Arial, sans-serif;
     }
 
     .btn {
@@ -120,221 +476,42 @@
         border: 15px;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     }
+
+    .modal-hidden {
+        display: none;
+    }
+
+    .modal-visible {
+        display: block;
+        position: fixed;
+        z-index: 1;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0,0,0,0.4);
+    }
+
+    .modal-content {
+        background-color: #fefefe;
+        margin: 15% auto;
+        padding: 20px;
+        border: 1px solid #888;
+        width: 80%;
+    }
+
+    .close {
+        color: #aaa;
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+    }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
 </style>
-
-
-@code {
-    private string _message = "";
-    private bool IsLoading { get; set; }
-    private string _fileNameFirst;
-    private string _fileNameSecond;
-    private string _fileSize;
-    private string FilePathCopyFirst { get; set; }
-    private string FilePathCopySecond { get; set; }
-    private string MyText { get; set; }
-    private bool IsCompare { get; set; }
-    private string Report { get; set; }
-    private string jsonFolder = JsonHelper.GetFolderJsonResult();
-    private string uniqueKey { get; set; } = Guid.NewGuid().ToString();
-    private string pdfSrc { get; set; }
-    private string _reportPath;
-    private string _tempFoldePath;
-    private bool HasError { get; set; } = false;
-    private string ErrorAlert { get; set; }
-    private string OutputText { get; set; }
-
-
-    private async Task OnFileSelectedFirst(InputFileChangeEventArgs e)
-    {
-        string targetFolderPath = JsonHelper.GetFolderTargetForExtract();
-        IReadOnlyList<IBrowserFile> selectedFiles;
-        selectedFiles = e.GetMultipleFiles();
-
-        IsLoading = true;
-        this.StateHasChanged();
-
-        foreach (var file in selectedFiles)
-        {
-
-            var pathFirstCopy = $"{targetFolderPath}\\Copy1{file.Name}";
-            FilePathCopyFirst = pathFirstCopy;
-            _fileNameFirst = file.Name;
-            _fileSize = file.Size.ToString();
-
-            FileStream fs = File.Create(pathFirstCopy);
-
-            const int bufferSize = 10 * 1024 * 1024; // 10 MB buffer size
-            byte[] buffer = new byte[bufferSize];
-
-            using (Stream stream = file.OpenReadStream(maxAllowedSize: 2000000))
-            {
-                int bytesRead;
-                while ((bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length)) > 0)
-                {
-                    await fs.WriteAsync(buffer, 0, bytesRead);
-                }
-            }
-
-            fs.Close();
-        }
-        IsLoading = false;
-        this.StateHasChanged();
-    }
-
-    private async Task OnFileSelectedSecond(InputFileChangeEventArgs e)
-    {
-        string targetFolderPath = JsonHelper.GetFolderTargetForExtract();
-        IReadOnlyList<IBrowserFile> selectedFiles;
-        selectedFiles = e.GetMultipleFiles();
-
-        IsLoading = true;
-        this.StateHasChanged();
-
-        foreach (var file in selectedFiles)
-        {
-
-            var pathSecondCopy = $"{targetFolderPath}\\Copy2{file.Name}";
-            FilePathCopySecond = pathSecondCopy;
-            _fileNameSecond = file.Name;
-            _fileSize = file.Size.ToString();
-            FileStream fs = File.Create(pathSecondCopy);
-
-            const int bufferSize = 10 * 1024 * 1024; // 10 MB buffer size
-            byte[] buffer = new byte[bufferSize];
-
-            using (Stream stream = file.OpenReadStream(maxAllowedSize: 2000000))
-            {
-                int bytesRead;
-                while ((bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length)) > 0)
-                {
-                    await fs.WriteAsync(buffer, 0, bytesRead);
-                }
-            }
-
-            fs.Close();
-        }
-        IsLoading = false;
-        this.StateHasChanged();
-    }
-
-    private async void ComparePDFfiles()
-    {
-        DateTime now = DateTime.Now;
-        string pdfNameFirst = FilePathCopyFirst;
-        string pdfNameSecond = FilePathCopySecond;
-        MyText = $"{pdfNameFirst} - begin extract first PDF";
-        MyText = $"{pdfNameSecond} - begin extract second PDF";
-        string fileNameFirst = _fileNameFirst;
-        string fileNameSecond = _fileNameSecond;
-
-        string dateTime = now.ToString();
-
-        try
-        {
-            IsCompare = true;
-            this.StateHasChanged();
-
-            ExtractPDF extractPDFCopyFirst = new ExtractPDF();
-            var resultFirst = await extractPDFCopyFirst.ExtractTextFromPDFForCompare(pdfNameFirst);
-
-            ExtractPDF extractPDFCopySecond = new ExtractPDF();
-            var resultSecond = await extractPDFCopySecond.ExtractTextFromPDFForCompare(pdfNameSecond);
-
-            Console.WriteLine($"First path - {resultFirst} \nSecond path - {resultSecond}");
-            OutputText = $"First path - {resultFirst} \nSecond path - {resultSecond}";
-
-            ComparingPDF comparingPDF = new ComparingPDF();
-
-            Dictionary<string, (string, string)> differences = comparingPDF.TestCompare(
-                resultFirst.Item1, resultSecond.Item1);
-
-            if (resultFirst.Item2 != "Success" && resultSecond.Item2 != "Success")
-            {
-                ErrorAlert = $"Error: {resultFirst.Item2}";
-                HasError = true;
-            }
-            else
-            {
-                HasError = false;
-            }
-
-            if (differences == null || differences.Count == 0)
-            {
-                Report = "Passed";
-            }
-            else
-            {
-                StringBuilder reportBuilder = new StringBuilder();
-
-                foreach (var diff in differences)
-                {
-                    reportBuilder.AppendLine($"<div class=\"difference\">");
-                    reportBuilder.AppendLine($"  <div class=\"difference-key\">Results - {diff.Key}:</div>");
-                    reportBuilder.AppendLine($"  <div class=\"difference-file1\">{_fileNameFirst}: {diff.Value.Item1}</div>");
-                    reportBuilder.AppendLine($"  <div class=\"difference-file2\">{_fileNameSecond}: {diff.Value.Item2}</div>");
-                    reportBuilder.AppendLine($"</div>");
-                }
-
-                GeneratorPDF generatorPDF = new GeneratorPDF();
-                string outputPath = JsonHelper.ReportPathName(env.WebRootPath);
-
-                generatorPDF.GeneratePDFForCompare(_fileNameFirst, _fileNameSecond, dateTime, reportBuilder.ToString(), outputPath);
-
-                pdfSrc = outputPath; // Update the pdfSrc variable with the output path
-                this.StateHasChanged();
-
-                uniqueKey = Guid.NewGuid().ToString(); // Update the uniqueKey variable to force a refresh
-                this.StateHasChanged();
-
-            }
-            IsCompare = false;
-            this.StateHasChanged();
-        }
-        catch (Exception ex)
-        {
-            MyText = $"Error: {ex.Message}";
-            IsCompare = false;
-            this.StateHasChanged();
-        }
-    }
-
-    private async void CleanJson()
-    {
-        FolderContent.ClearFolderContents(jsonFolder);
-    }
-
-    private async void CleanReport()
-    {
-        _reportPath = Path.Combine(env.WebRootPath, "reports", "report.pdf");
-        _tempFoldePath = Path.Combine("tempZip");
-
-        try
-        {
-            if (File.Exists(_reportPath))
-            {
-                File.Delete(_reportPath);
-                RemoveIframeSource(); // delete Iframe source
-            }
-
-            DirectoryInfo tempFolder = new DirectoryInfo(_tempFoldePath);
-
-            if (tempFolder.Exists)
-            {
-                foreach (FileInfo file in tempFolder.GetFiles())
-                {
-                    file.Delete();
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            MyText = ex.Message;
-        }
-    }
-
-    private void RemoveIframeSource()
-    {
-        uniqueKey = Guid.NewGuid().ToString();
-        this.StateHasChanged(); // Update component
-    }
-}
