@@ -27,7 +27,9 @@ namespace ExtractLibrary
             return differences;
         }
 
+        //public Dictionary<string, (string, string)> TestCompare(string pathFirst, string pathSecond)
         public Dictionary<string, (string, string)> TestCompare(string pathFirst, string pathSecond)
+
         {
             var _readJsonFileHelper = new ReadJsonFileHelper();
             string jsonFilePath1 = pathFirst;
@@ -115,7 +117,7 @@ namespace ExtractLibrary
             }
             else
             {
-                differences[path] = (token1.ToString(), "No differences with file 1");
+                differences[path] = (token1.ToString(), "No differences with file 1 or this element does not exist.");
             }
         }
     }

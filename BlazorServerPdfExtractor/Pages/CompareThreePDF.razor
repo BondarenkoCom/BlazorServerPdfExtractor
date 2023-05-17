@@ -1,4 +1,4 @@
-﻿@page "/ComparePDF"
+﻿@page "/CompareThreePDF"
 @using System.IO
 @using ExtractLibrary
 @using ExtractLibrary.Helpers
@@ -8,15 +8,15 @@
 @using System.Text
 @inject IWebHostEnvironment env
 
-<h3 class="header">Compare PDF</h3>
+<h3 class="header">Compare three PDF</h3>
 
 <div class="modal @ModalClass" id="myModal">
     <div class="modal-content">
         <span class="close" @onclick="ToggleModal">&times;</span>
         <p>
-            After you've uploaded both files, you can click the "Compare PDF" button to start the comparison process.<br>
+            After you've uploaded all three files, you can click the "Compare PDF" button to start the comparison process.<br>
             The application will read each PDF and compare the text content.
-            <br>The comparison includes checking for text that appears in one file but not in the other, differences in the order of text, and so on.
+            <br>The comparison includes checking for text that appears in one file but not in others, differences in the order of text, and so on.
         </p>
     </div>
 </div>
@@ -25,7 +25,7 @@
     <div class="button-row">
         <div class="file-input-container">
             <InputFile OnChange="@(e => OnFileSelected(e, 1))" MaxFileSize="104857600" accept="application/pdf" disabled="@IsCompare" />
-            <label for="file-upload" class="custom-file-upload">Upload PDF 1</label>
+            <label for="file-upload" class="custom-file-upload">"Upload PDF 1" is the main file for comparison with PDF 2 and PDF 3.</label>
             @if (isFile1Extracted && !IsLoading)
             {
                 <div class="alert alert-success upload-success">Success Extract</div>
@@ -38,6 +38,18 @@
         <div class="file-input-container">
             <InputFile OnChange="@(e => OnFileSelected(e, 2))" MaxFileSize="104857600" accept="application/pdf" disabled="@IsCompare" />
             <label for="file-upload" class="custom-file-upload">Upload PDF 2</label>
+            @if (isFile1Extracted && !IsLoading)
+            {
+                <div class="alert alert-success upload-success">Success Extract</div>
+            }
+            @if (extractError1 != "")
+            {
+                <div class="alert alert-danger upload-error">@extractError1</div>
+            }
+        </div>
+        <div class="file-input-container">
+            <InputFile OnChange="@(e => OnFileSelected(e, 3))" MaxFileSize="104857600" accept="application/pdf" disabled="@IsCompare" />
+            <label for="file-upload" class="custom-file-upload">Upload PDF 3</label>
             @if (isFile1Extracted && !IsLoading)
             {
                 <div class="alert alert-success upload-success">Success Extract</div>
@@ -93,9 +105,11 @@
     private bool IsLoading { get; set; }
     private string _fileNameFirst;
     private string _fileNameSecond;
+    private string _fileNameThird;
     private string _fileSize;
     private string FilePathCopyFirst { get; set; }
     private string FilePathCopySecond { get; set; }
+    private string FilePathCopyThird { get; set; }
     private string MyText { get; set; }
     private bool IsCompare { get; set; }
     private string Report { get; set; }
@@ -109,10 +123,13 @@
     private string OutputText { get; set; }
     private bool isFile1Uploaded { get; set; } = false;
     private bool isFile2Uploaded { get; set; } = false;
+    private bool isFile3Uploaded { get; set; } = false;
     private bool isFile1Extracted { get; set; } = false;
     private bool isFile2Extracted { get; set; } = false;
+    private bool isFile3Extracted { get; set; } = false;
     private string extractError1 { get; set; } = "";
     private string extractError2 { get; set; } = "";
+    private string extractError3 { get; set; } = "";
 
     private string ModalClass { get; set; } = "modal-hidden";
 
@@ -121,10 +138,13 @@
         DateTime now = DateTime.Now;
         string pdfNameFirst = FilePathCopyFirst;
         string pdfNameSecond = FilePathCopySecond;
+        string pdfNameThird = FilePathCopyThird;
         MyText = $"{pdfNameFirst} - begin extract first PDF";
         MyText = $"{pdfNameSecond} - begin extract second PDF";
+        MyText = $"{pdfNameThird} - begin extract third PDF";
         string fileNameFirst = _fileNameFirst;
         string fileNameSecond = _fileNameSecond;
+        string fileNameThird = _fileNameThird;
         string dateTime = now.ToString();
 
         try
@@ -154,15 +174,26 @@
                 extractError2 = resultSecond.Item2;
             }
 
-            Console.WriteLine($"First path - {resultFirst} \nSecond path - {resultSecond}");
-            OutputText = $"First path - {resultFirst} \nSecond path - {resultSecond}";
+            ExtractPDF extractPDFCopyThird = new ExtractPDF();
+            var resultThird = await extractPDFCopyThird.ExtractTextFromPDFForCompare(pdfNameThird);
+            if (resultThird.Item2 == "Success")
+            {
+                isFile3Extracted = true;
+            }
+            else
+            {
+                extractError3 = resultThird.Item2;
+            }
+
+            Console.WriteLine($"First path - {resultFirst} \nSecond path - {resultSecond} \nThird path - {resultThird}");
+            OutputText = $"First path - {resultFirst} \nSecond path - {resultSecond} \nThird path - {resultThird}";
 
             ComparingPDF comparingPDF = new ComparingPDF();
-            string mes = "empty";
-            Dictionary<string, (string, string)> differences = comparingPDF.TestCompare(
-                resultFirst.Item1, resultSecond.Item1);
 
-            if (resultFirst.Item2 != "Success" || resultSecond.Item2 != "Success")
+            Dictionary<string, (string, string, string)> differences = comparingPDF.TestCompareThree(
+                resultFirst.Item1, resultSecond.Item1, resultThird.Item1);
+
+            if (resultFirst.Item2 != "Success" || resultSecond.Item2 != "Success" || resultThird.Item2 != "Success")
             {
                 ErrorAlert = $"Error: {resultFirst.Item2}";
                 HasError = true;
@@ -186,6 +217,7 @@
                     reportBuilder.AppendLine($"  <h3 class=\"difference-key\">Result Differences - {diff.Key}:</h3>");
                     reportBuilder.AppendLine($"  <div class=\"difference-file1\"><span style='color: green; font-weight: bold;'>{_fileNameFirst}:</span> <span style='background-color: #e8f5e9;'>{diff.Value.Item1}</span></div>");
                     reportBuilder.AppendLine($"  <div class=\"difference-file2\"><span style='color: blue; font-weight: bold;'>{_fileNameSecond}:</span> <span style='background-color: #e3f2fd;'>{diff.Value.Item2}</span></div>");
+                    reportBuilder.AppendLine($"  <div class=\"difference-file3\"><span style='color: red; font-weight: bold;'>{_fileNameThird}:</span> <span style='background-color: #ffebee;'>{diff.Value.Item3}</span></div>");
                     reportBuilder.AppendLine($"</div>");
                 }
 
@@ -194,7 +226,7 @@
 
                 try
                 {
-                    generatorPDF.GeneratePDFForCompare(_fileNameFirst, _fileNameSecond, "Nothing", dateTime, reportBuilder.ToString(), outputPath);
+                    generatorPDF.GeneratePDFForCompare(_fileNameFirst, _fileNameSecond, _fileNameThird, dateTime, reportBuilder.ToString(), outputPath);
                 }
                 catch (Exception ex)
                 {
@@ -286,6 +318,12 @@
                 FilePathCopySecond = pathCopy;
                 _fileNameSecond = file.Name;
                 isFile2Uploaded = true;
+            }
+            else
+            {
+                FilePathCopyThird = pathCopy;
+                _fileNameThird = file.Name;
+                isFile3Uploaded = true;
             }
             _fileSize = file.Size.ToString();
 

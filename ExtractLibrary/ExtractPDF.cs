@@ -19,7 +19,6 @@ namespace ExtractLibrary
         {
             try
             {
-
                 Adobe.PDFServicesSDK.auth.Credentials credentials = Adobe.PDFServicesSDK.auth.Credentials.ServiceAccountCredentialsBuilder()
             .FromFile(credentialsFilePath)
             .Build();
@@ -38,11 +37,15 @@ namespace ExtractLibrary
                 FileRef result;
 
                 result = await Task.Run(() => operation.Execute(executionContext));
-                
+
                 if (File.Exists(zipResult))
                 {
                     File.Delete(zipResult);
                 }
+
+                // Ensure the directory exists
+                Directory.CreateDirectory(Path.GetDirectoryName(zipResult));
+
                 result.SaveAs(zipResult);
 
                 resExtract.ExtractZip(zipResult);
@@ -84,7 +87,7 @@ namespace ExtractLibrary
                 result.SaveAs(zipResult);
 
                 string randomString = RandomStringName.GenerateRandomString(5);
-                var path = resExtract.ExtractZipCopy(zipResult , randomString);
+                var path = resExtract.ExtractZipCopy(zipResult, randomString);
                 return Tuple.Create(path, "Success");
             }
             catch (Exception ex)

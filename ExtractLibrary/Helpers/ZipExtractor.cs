@@ -12,11 +12,8 @@ namespace SpecFlowPdfReader.Helpers
                 foreach (ZipArchiveEntry entry in archive.Entries)
                 {
                     string entryPath = Path.Combine(extractPath, entry.FullName);
-                    if (string.IsNullOrEmpty(entry.Name))
-                    {
-                        Directory.CreateDirectory(entryPath);
-                    }
-                    else
+                    Directory.CreateDirectory(Path.GetDirectoryName(entryPath));
+                    if (!string.IsNullOrEmpty(entry.Name))
                     {
                         entry.ExtractToFile(entryPath, true);
                     }
@@ -39,13 +36,9 @@ namespace SpecFlowPdfReader.Helpers
                     }
 
                     string entryPath = Path.Combine(extractPath, newEntryName);
+                    Directory.CreateDirectory(Path.GetDirectoryName(entryPath));
 
-                    if (string.IsNullOrEmpty(entry.Name))
-                    {
-                        Directory.CreateDirectory(entryPath);
-                        return entryPath;
-                    }
-                    else
+                    if (!string.IsNullOrEmpty(entry.Name))
                     {
                         entry.ExtractToFile(entryPath, true);
                         return entryPath;
