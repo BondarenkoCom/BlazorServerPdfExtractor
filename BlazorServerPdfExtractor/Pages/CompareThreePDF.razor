@@ -28,11 +28,11 @@
             <label for="file-upload" class="custom-file-upload">"Upload PDF 1" is the main file for comparison with PDF 2 and PDF 3.</label>
             @if (isFile1Extracted && !IsLoading)
             {
-                <div class="alert alert-success upload-success">Success Extract</div>
+                    <div class="alert alert-success upload-success">Success Extract</div>
             }
             @if (extractError1 != "")
             {
-                <div class="alert alert-danger upload-error">@extractError1</div>
+                    <div class="alert alert-danger upload-error">@extractError1</div>
             }
         </div>
         <div class="file-input-container">
@@ -40,11 +40,11 @@
             <label for="file-upload" class="custom-file-upload">Upload PDF 2</label>
             @if (isFile1Extracted && !IsLoading)
             {
-                <div class="alert alert-success upload-success">Success Extract</div>
+                    <div class="alert alert-success upload-success">Success Extract</div>
             }
             @if (extractError1 != "")
             {
-                <div class="alert alert-danger upload-error">@extractError1</div>
+                    <div class="alert alert-danger upload-error">@extractError1</div>
             }
         </div>
         <div class="file-input-container">
@@ -52,11 +52,11 @@
             <label for="file-upload" class="custom-file-upload">Upload PDF 3</label>
             @if (isFile1Extracted && !IsLoading)
             {
-                <div class="alert alert-success upload-success">Success Extract</div>
+                    <div class="alert alert-success upload-success">Success Extract</div>
             }
             @if (extractError1 != "")
             {
-                <div class="alert alert-danger upload-error">@extractError1</div>
+                    <div class="alert alert-danger upload-error">@extractError1</div>
             }
         </div>
     </div>
@@ -72,30 +72,30 @@
 
 @if (IsLoading)
 {
-    <div class="alert alert-primary" role="alert">
-        Uploading...
-    </div>
+        <div class="alert alert-primary" role="alert">
+            Uploading...
+        </div>
 }
 
 @if (IsCompare)
 {
-    <div class="alert alert-primary" role="alert">
-        Comparing...
-    </div>
+        <div class="alert alert-primary" role="alert">
+            Comparing...
+        </div>
 }
 
 @if (HasError)
 {
-    <div class="alert alert-danger" role="alert">
+        <div class="alert alert-danger" role="alert">
         @ErrorAlert
-    </div>
+        </div>
 }
 
 @if (Report == "Passed" && !IsLoading && !IsCompare)
 {
-    <div class="alert alert-success" role="alert">
-        No differences were found in the compared PDFs.
-    </div>
+        <div class="alert alert-success" role="alert">
+            No differences were found in the compared PDFs.
+        </div>
 }
 
 <iframe class="pdf-frame" src="@($"/reports/report.pdf?unique={uniqueKey}#zoom=150")" width="100%" height="800px"></iframe>
@@ -260,11 +260,10 @@
         FolderContent.ClearFolderContents(jsonFolder);
     }
 
-    private async void CleanReport()
+    private async Task CleanReport()
     {
         _reportPath = Path.Combine(env.WebRootPath, "reports", "report.pdf");
         _tempFoldePath = Path.Combine("tempZip");
-
         try
         {
             if (File.Exists(_reportPath))
@@ -272,9 +271,7 @@
                 File.Delete(_reportPath);
                 RemoveIframeSource(); // delete Iframe source
             }
-
             DirectoryInfo tempFolder = new DirectoryInfo(_tempFoldePath);
-
             if (tempFolder.Exists)
             {
                 foreach (FileInfo file in tempFolder.GetFiles())
@@ -286,6 +283,14 @@
         catch (Exception ex)
         {
             MyText = ex.Message;
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await CleanReport();
         }
     }
 

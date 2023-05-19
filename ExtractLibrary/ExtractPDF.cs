@@ -61,6 +61,18 @@ namespace ExtractLibrary
         {
             try
             {
+                if (!File.Exists(credentialsFilePath))
+                {
+                    throw new Exception($"Credentials file does not exist: {credentialsFilePath}");
+                }
+
+                string credentialsContents = File.ReadAllText(credentialsFilePath);
+                if (string.IsNullOrEmpty(credentialsContents))
+                {
+                    throw new Exception($"Credentials file is empty: {credentialsFilePath}");
+                }
+
+
                 Adobe.PDFServicesSDK.auth.Credentials credentials = Adobe.PDFServicesSDK.auth.Credentials.ServiceAccountCredentialsBuilder()
             .FromFile(credentialsFilePath)
             .Build();

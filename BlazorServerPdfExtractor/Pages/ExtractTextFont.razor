@@ -182,11 +182,10 @@
         this.StateHasChanged();
     }
 
-    private async void CleanReport()
+        private async Task CleanReport()
     {
         _reportPath = Path.Combine(env.WebRootPath, "reports", "report.pdf");
         _tempFoldePath = Path.Combine("tempZip");
-
         try
         {
             if (File.Exists(_reportPath))
@@ -194,9 +193,7 @@
                 File.Delete(_reportPath);
                 RemoveIframeSource(); // delete Iframe source
             }
-
             DirectoryInfo tempFolder = new DirectoryInfo(_tempFoldePath);
-
             if (tempFolder.Exists)
             {
                 foreach (FileInfo file in tempFolder.GetFiles())
@@ -208,6 +205,14 @@
         catch (Exception ex)
         {
             MyText = ex.Message;
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await CleanReport();
         }
     }
 

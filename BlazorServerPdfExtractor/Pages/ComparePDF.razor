@@ -228,11 +228,10 @@
         FolderContent.ClearFolderContents(jsonFolder);
     }
 
-    private async void CleanReport()
+    private async Task CleanReport()
     {
         _reportPath = Path.Combine(env.WebRootPath, "reports", "report.pdf");
         _tempFoldePath = Path.Combine("tempZip");
-
         try
         {
             if (File.Exists(_reportPath))
@@ -240,9 +239,7 @@
                 File.Delete(_reportPath);
                 RemoveIframeSource(); // delete Iframe source
             }
-
             DirectoryInfo tempFolder = new DirectoryInfo(_tempFoldePath);
-
             if (tempFolder.Exists)
             {
                 foreach (FileInfo file in tempFolder.GetFiles())
@@ -257,11 +254,20 @@
         }
     }
 
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await CleanReport();
+        }
+    }
+
     private void RemoveIframeSource()
     {
         uniqueKey = Guid.NewGuid().ToString();
         this.StateHasChanged(); // Update component
     }
+
 
     private async Task OnFileSelected(InputFileChangeEventArgs e, int copyNumber)
     {

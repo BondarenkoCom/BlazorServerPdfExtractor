@@ -27,7 +27,6 @@ namespace ExtractLibrary
             return differences;
         }
 
-        //public Dictionary<string, (string, string)> TestCompare(string pathFirst, string pathSecond)
         public Dictionary<string, (string, string)> TestCompare(string pathFirst, string pathSecond)
 
         {
