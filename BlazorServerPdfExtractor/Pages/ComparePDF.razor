@@ -25,11 +25,15 @@
     <div class="button-row">
         <div class="file-input-container">
             <InputFile OnChange="@(e => OnFileSelected(e, 1))" MaxFileSize="104857600" accept="application/pdf" disabled="@IsCompare" />
-            <label for="file-upload" class="custom-file-upload">Upload PDF 1</label>
+            @if (!isFile1Uploaded)
+            {
+                <label for="file-upload" class="custom-file-upload">Upload PDF 1</label>
+            }
             @if (isFile1Extracted && !IsLoading)
             {
                 <div class="alert alert-success upload-success">Success Extract</div>
             }
+
             @if (extractError1 != "")
             {
                 <div class="alert alert-danger upload-error">@extractError1</div>
@@ -37,14 +41,17 @@
         </div>
         <div class="file-input-container">
             <InputFile OnChange="@(e => OnFileSelected(e, 2))" MaxFileSize="104857600" accept="application/pdf" disabled="@IsCompare" />
-            <label for="file-upload" class="custom-file-upload">Upload PDF 2</label>
-            @if (isFile1Extracted && !IsLoading)
+            @if (!isFile2Uploaded)
+            {
+                <label for="file-upload" class="custom-file-upload">Upload PDF 2</label>
+            }
+            @if (isFile2Extracted && !IsLoading)
             {
                 <div class="alert alert-success upload-success">Success Extract</div>
             }
-            @if (extractError1 != "")
+            @if (extractError2 != "")
             {
-                <div class="alert alert-danger upload-error">@extractError1</div>
+                <div class="alert alert-danger upload-error">@extractError2</div>
             }
         </div>
     </div>
@@ -57,6 +64,15 @@
         <button class="btn btn-danger" @onclick="CleanJson">Clean JsonFile</button>
     </div>
 </div>
+
+@if (HasSuccess)
+{
+    <div class="alert alert-success" role="alert">
+        Operation was successful! File first saved to: @SuccessAlert
+        <br>
+        Operation was successful! File Second saved to: @SuccessAlertSecond
+    </div>
+}
 
 @if (IsLoading)
 {
@@ -113,7 +129,9 @@
     private bool isFile2Extracted { get; set; } = false;
     private string extractError1 { get; set; } = "";
     private string extractError2 { get; set; } = "";
-
+    private bool HasSuccess { get; set; } = false;
+    private string SuccessAlert { get; set; }
+    private string SuccessAlertSecond { get; set; }
     private string ModalClass { get; set; } = "modal-hidden";
 
     private async void ComparePDFfiles()
@@ -134,9 +152,12 @@
 
             ExtractPDF extractPDFCopyFirst = new ExtractPDF();
             var resultFirst = await extractPDFCopyFirst.ExtractTextFromPDFForCompare(pdfNameFirst);
+
             if (resultFirst.Item2 == "Success")
             {
                 isFile1Extracted = true;
+                HasSuccess = true;  // Set success to true
+                SuccessAlert = resultFirst.Item1;
             }
             else
             {
@@ -148,6 +169,8 @@
             if (resultSecond.Item2 == "Success")
             {
                 isFile2Extracted = true;
+                HasSuccess = true;  // Set success to true
+                SuccessAlertSecond = resultSecond.Item1;  // Update SuccessAlert to the successful file path
             }
             else
             {
@@ -156,6 +179,7 @@
 
             Console.WriteLine($"First path - {resultFirst} \nSecond path - {resultSecond}");
             OutputText = $"First path - {resultFirst} \nSecond path - {resultSecond}";
+
 
             ComparingPDF comparingPDF = new ComparingPDF();
             string mes = "empty";
@@ -268,7 +292,6 @@
         this.StateHasChanged(); // Update component
     }
 
-
     private async Task OnFileSelected(InputFileChangeEventArgs e, int copyNumber)
     {
         string targetFolderPath = JsonHelper.GetFolderTargetForExtract();
@@ -280,36 +303,50 @@
 
         foreach (var file in selectedFiles)
         {
-            var pathCopy = $"{targetFolderPath}\\Copy{copyNumber}{file.Name}";
-            if (copyNumber == 1)
+            try
             {
-                FilePathCopyFirst = pathCopy;
-                _fileNameFirst = file.Name;
-                isFile1Uploaded = true;
-            }
-            else if (copyNumber == 2)
-            {
-                FilePathCopySecond = pathCopy;
-                _fileNameSecond = file.Name;
-                isFile2Uploaded = true;
-            }
-            _fileSize = file.Size.ToString();
+                var pathCopy = $"{targetFolderPath}\\Copy{copyNumber}{file.Name}";
 
-            FileStream fs = File.Create(pathCopy);
-
-            const int bufferSize = 10 * 1024 * 1024; // 10 MB buffer size
-            byte[] buffer = new byte[bufferSize];
-
-            using (Stream stream = file.OpenReadStream(maxAllowedSize: 2000000))
-            {
-                int bytesRead;
-                while ((bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length)) > 0)
+                if (File.Exists(pathCopy))
                 {
-                    await fs.WriteAsync(buffer, 0, bytesRead);
+                    File.Delete(pathCopy);
                 }
-            }
 
-            fs.Close();
+                if (copyNumber == 1)
+                {
+                    FilePathCopyFirst = pathCopy;
+                    _fileNameFirst = file.Name;
+                    isFile1Uploaded = true;
+                }
+                else if (copyNumber == 2)
+                {
+                    FilePathCopySecond = pathCopy;
+                    _fileNameSecond = file.Name;
+                    isFile2Uploaded = true;
+                }
+                _fileSize = file.Size.ToString();
+
+                FileStream fs = File.Create(pathCopy);
+
+                const int bufferSize = 10 * 1024 * 1024; // 10 MB buffer size
+                byte[] buffer = new byte[bufferSize];
+
+                using (Stream stream = file.OpenReadStream(maxAllowedSize: 104857600)) // 100 MB
+                {
+                    int bytesRead;
+                    while ((bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length)) > 0)
+                    {
+                        await fs.WriteAsync(buffer, 0, bytesRead);
+                    }
+                }
+
+                fs.Close();
+            }
+            catch (Exception ex)
+            {
+                // handle the exception
+                MyText = ex.Message;
+            }
         }
         IsLoading = false;
         this.StateHasChanged();
@@ -352,6 +389,7 @@
     .btn-info {
         background-color: #3cb371;
         border-color: #3cb371;
+        margin-right: 20px;
     }
 
     input[type=file] {

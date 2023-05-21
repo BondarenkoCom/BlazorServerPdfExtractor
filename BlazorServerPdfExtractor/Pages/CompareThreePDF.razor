@@ -25,38 +25,47 @@
     <div class="button-row">
         <div class="file-input-container">
             <InputFile OnChange="@(e => OnFileSelected(e, 1))" MaxFileSize="104857600" accept="application/pdf" disabled="@IsCompare" />
-            <label for="file-upload" class="custom-file-upload">"Upload PDF 1" is the main file for comparison with PDF 2 and PDF 3.</label>
+            @if (!isFile1Uploaded)
+            {
+                <label for="file-upload" class="custom-file-upload">Upload PDF 1" is the main file for comparison with PDF 2 and PDF 3.</label>
+            }
             @if (isFile1Extracted && !IsLoading)
             {
-                    <div class="alert alert-success upload-success">Success Extract</div>
+                <div class="alert alert-success upload-success">Success Extract</div>
             }
             @if (extractError1 != "")
             {
-                    <div class="alert alert-danger upload-error">@extractError1</div>
+                <div class="alert alert-danger upload-error">@extractError1</div>
             }
         </div>
         <div class="file-input-container">
             <InputFile OnChange="@(e => OnFileSelected(e, 2))" MaxFileSize="104857600" accept="application/pdf" disabled="@IsCompare" />
-            <label for="file-upload" class="custom-file-upload">Upload PDF 2</label>
-            @if (isFile1Extracted && !IsLoading)
+            @if (!isFile2Uploaded)
             {
-                    <div class="alert alert-success upload-success">Success Extract</div>
+                <label for="file-upload" class="custom-file-upload">Upload PDF 2</label>
             }
-            @if (extractError1 != "")
+            @if (isFile2Extracted && !IsLoading)
             {
-                    <div class="alert alert-danger upload-error">@extractError1</div>
+                <div class="alert alert-success upload-success">Success Extract</div>
+            }
+            @if (extractError2 != "")
+            {
+                <div class="alert alert-danger upload-error">@extractError2</div>
             }
         </div>
         <div class="file-input-container">
             <InputFile OnChange="@(e => OnFileSelected(e, 3))" MaxFileSize="104857600" accept="application/pdf" disabled="@IsCompare" />
-            <label for="file-upload" class="custom-file-upload">Upload PDF 3</label>
-            @if (isFile1Extracted && !IsLoading)
+            @if (!isFile3Uploaded)
             {
-                    <div class="alert alert-success upload-success">Success Extract</div>
+                <label for="file-upload" class="custom-file-upload">Upload PDF 3</label>
             }
-            @if (extractError1 != "")
+            @if (isFile3Extracted && !IsLoading)
             {
-                    <div class="alert alert-danger upload-error">@extractError1</div>
+                <div class="alert alert-success upload-success">Success Extract</div>
+            }
+            @if (extractError3 != "")
+            {
+                <div class="alert alert-danger upload-error">@extractError3</div>
             }
         </div>
     </div>
@@ -70,32 +79,50 @@
     </div>
 </div>
 
+@if (HasSuccess)
+{
+    <div class="alert alert-success success-message" role="alert">
+        Operation was successful! File first saved to: @SuccessAlert
+        <br>
+        Operation was successful! File Second saved to: @SuccessAlertSecond
+        <br>
+        Operation was successful! File Third saved to: @SuccessAlertThird
+    </div>
+}
+
+@if (Report == "No differences found among the three PDF files.")
+{
+    <div class="alert alert-success" role="alert">
+        @Report
+    </div>
+}
+
 @if (IsLoading)
 {
-        <div class="alert alert-primary" role="alert">
-            Uploading...
-        </div>
+    <div class="alert alert-primary" role="alert">
+        Uploading...
+    </div>
 }
 
 @if (IsCompare)
 {
-        <div class="alert alert-primary" role="alert">
-            Comparing...
-        </div>
+    <div class="alert alert-primary" role="alert">
+        Comparing...
+    </div>
 }
 
 @if (HasError)
 {
-        <div class="alert alert-danger" role="alert">
+    <div class="alert alert-danger" role="alert">
         @ErrorAlert
-        </div>
+    </div>
 }
 
 @if (Report == "Passed" && !IsLoading && !IsCompare)
 {
-        <div class="alert alert-success" role="alert">
-            No differences were found in the compared PDFs.
-        </div>
+    <div class="alert alert-success" role="alert">
+        No differences were found in the compared PDFs.
+    </div>
 }
 
 <iframe class="pdf-frame" src="@($"/reports/report.pdf?unique={uniqueKey}#zoom=150")" width="100%" height="800px"></iframe>
@@ -130,7 +157,10 @@
     private string extractError1 { get; set; } = "";
     private string extractError2 { get; set; } = "";
     private string extractError3 { get; set; } = "";
-
+    private bool HasSuccess { get; set; } = false;
+    private string SuccessAlert { get; set; }
+    private string SuccessAlertSecond { get; set; }
+    private string SuccessAlertThird { get; set; }
     private string ModalClass { get; set; } = "modal-hidden";
 
     private async void ComparePDFfiles()
@@ -154,9 +184,12 @@
 
             ExtractPDF extractPDFCopyFirst = new ExtractPDF();
             var resultFirst = await extractPDFCopyFirst.ExtractTextFromPDFForCompare(pdfNameFirst);
+
             if (resultFirst.Item2 == "Success")
             {
                 isFile1Extracted = true;
+                HasSuccess = true;  // Set success to true
+                SuccessAlert = resultFirst.Item1;
             }
             else
             {
@@ -165,9 +198,12 @@
 
             ExtractPDF extractPDFCopySecond = new ExtractPDF();
             var resultSecond = await extractPDFCopySecond.ExtractTextFromPDFForCompare(pdfNameSecond);
+
             if (resultSecond.Item2 == "Success")
             {
                 isFile2Extracted = true;
+                HasSuccess = true;  // Set success to true
+                SuccessAlertSecond = resultSecond.Item1;  // Update SuccessAlert to the successful file path
             }
             else
             {
@@ -176,14 +212,18 @@
 
             ExtractPDF extractPDFCopyThird = new ExtractPDF();
             var resultThird = await extractPDFCopyThird.ExtractTextFromPDFForCompare(pdfNameThird);
+
             if (resultThird.Item2 == "Success")
             {
                 isFile3Extracted = true;
+                HasSuccess = true;
+                SuccessAlertThird = resultThird.Item1;
             }
             else
             {
-                extractError3 = resultThird.Item2;
+                extractError2 = resultThird.Item2;
             }
+
 
             Console.WriteLine($"First path - {resultFirst} \nSecond path - {resultSecond} \nThird path - {resultThird}");
             OutputText = $"First path - {resultFirst} \nSecond path - {resultSecond} \nThird path - {resultThird}";
@@ -205,7 +245,7 @@
 
             if (differences == null || differences.Count == 0)
             {
-                Report = "Passed";
+                Report = "No differences found among the three PDF files.";
             }
             else
             {
@@ -312,6 +352,13 @@
         foreach (var file in selectedFiles)
         {
             var pathCopy = $"{targetFolderPath}\\Copy{copyNumber}{file.Name}";
+
+
+            if (File.Exists(pathCopy))
+            {
+                File.Delete(pathCopy);
+            }
+
             if (copyNumber == 1)
             {
                 FilePathCopyFirst = pathCopy;
@@ -332,21 +379,25 @@
             }
             _fileSize = file.Size.ToString();
 
-            FileStream fs = File.Create(pathCopy);
-
-            const int bufferSize = 10 * 1024 * 1024; // 10 MB buffer size
-            byte[] buffer = new byte[bufferSize];
-
-            using (Stream stream = file.OpenReadStream(maxAllowedSize: 2000000))
+            try
             {
-                int bytesRead;
-                while ((bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length)) > 0)
+                FileStream fs = File.Create(pathCopy);
+                const int bufferSize = 10 * 1024 * 1024; // 10 MB buffer size
+                byte[] buffer = new byte[bufferSize];
+                using (Stream stream = file.OpenReadStream(maxAllowedSize: 104857600)) // 100 MB
                 {
-                    await fs.WriteAsync(buffer, 0, bytesRead);
+                    int bytesRead;
+                    while ((bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length)) > 0)
+                    {
+                        await fs.WriteAsync(buffer, 0, bytesRead);
+                    }
                 }
+                fs.Close();
             }
-
-            fs.Close();
+            catch (Exception ex)
+            {
+                Console.WriteLine($"error: {ex.Message}");
+            }
         }
         IsLoading = false;
         this.StateHasChanged();
@@ -389,6 +440,7 @@
     .btn-info {
         background-color: #3cb371;
         border-color: #3cb371;
+        margin-right: 20px;
     }
 
     input[type=file] {
@@ -480,6 +532,14 @@
         margin-top: 50px;
         border: 15px;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .alert-success {
+        margin-top: 20px;
+    }
+
+    .success-message {
+        margin-top: 50px;
     }
 
     .modal-hidden {

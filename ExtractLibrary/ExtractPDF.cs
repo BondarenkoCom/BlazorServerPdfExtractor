@@ -15,7 +15,8 @@ namespace ExtractLibrary
         private string? jsonResut = JsonHelper.GetValues().jsonPath;
         readonly ZipExtractor resExtract = new ZipExtractor();
 
-        public async Task<string> ExtractTextFromPDF(string pdfFilePath)
+        //public async Task<string> ExtractTextFromPDF(string pdfFilePath)
+        public async Task<Tuple<string, string>> ExtractTextFromPDF(string pdfFilePath)
         {
             try
             {
@@ -49,11 +50,13 @@ namespace ExtractLibrary
                 result.SaveAs(zipResult);
 
                 resExtract.ExtractZip(zipResult);
-                return "Success";
+                //return "Success";
+                return new Tuple<string, string>("Success", zipResult);
+
             }
             catch (Exception ex)
             {
-                return ex.Message.ToString();
+                return new Tuple<string, string>(ex.Message.ToString(), null);
             }
         }
 

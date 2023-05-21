@@ -34,6 +34,13 @@
     </div>
 </div>
 
+@if (HasSuccess)
+{
+    <div class="alert alert-success" role="alert">
+        Operation was successful! File saved to: @SuccessAlert
+    </div>
+}
+
 @if (IsLoading)
 {
     <div class="alert alert-primary" role="alert">
@@ -86,6 +93,8 @@
     private string ErrorAlert { get; set; }
     private bool ImageExtractSuccess { get; set; } = false;
     private string ModalClass { get; set; } = "modal-hidden";
+    private bool HasSuccess { get; set; } = false;
+    private string SuccessAlert { get; set; }
 
     private async Task HandleFileSelected(InputFileChangeEventArgs e)
     {
@@ -104,12 +113,17 @@
             _fileName = file.Name;
             _fileSize = file.Size.ToString();
 
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
+
             FileStream fs = File.Create(path);
 
             const int bufferSize = 10 * 1024 * 1024; // 10 MB buffer size
             byte[] buffer = new byte[bufferSize];
 
-            using (Stream stream = file.OpenReadStream(maxAllowedSize: 2000000))
+            using (Stream stream = file.OpenReadStream(maxAllowedSize: 104857600)) // 100 MB
             {
                 int bytesRead;
                 while ((bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length)) > 0)
@@ -125,7 +139,7 @@
         this.StateHasChanged();
     }
 
-       private async Task CleanReport()
+    private async Task CleanReport()
     {
         _reportPath = Path.Combine(env.WebRootPath, "reports", "report.pdf");
         _tempFoldePath = Path.Combine("tempZip");
@@ -182,15 +196,17 @@
             this.StateHasChanged();
 
             ExtractPDF extractPDF = new ExtractPDF();
-            string result = await extractPDF.ExtractTextFromPDF(pdfName);
+            var result = await extractPDF.ExtractTextFromPDF(pdfName);
 
-            if (result != "Success")
+            if (result.Item1 != "Success")
             {
-                ErrorAlert = $"Error: {result}";
+                ErrorAlert = $"Error: {result.Item1}";
                 HasError = true;
             }
             else
             {
+                SuccessAlert = result.Item2;
+                HasSuccess = true;
                 HasError = false;
             }
 
