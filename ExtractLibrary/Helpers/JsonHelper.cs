@@ -62,13 +62,13 @@ namespace SpecFlowPdfReader.Helpers
             return JsonPath;
         }
 
-        public static string ReportPathName(string path)
+        public static (string, string) ReportPathName(string path, string uniqueKeyNamePath)
         {
             string currentDirectory = Directory.GetCurrentDirectory();
-            string JsonPath = Path.Combine(path, "reports", "report.pdf");
+            string JsonPath = Path.Combine(path, "reports", $"report_{uniqueKeyNamePath}.html");
 
             Console.WriteLine($"Report path name: {JsonPath}");
-            return JsonPath;
+            return (JsonPath, uniqueKeyNamePath);
         }
 
         public static (string settingPath, string ClientId, string ClientSecret,
@@ -129,6 +129,5 @@ namespace SpecFlowPdfReader.Helpers
             Console.WriteLine($"Updating private key in: {jsonPathPrivateKey}");
             File.WriteAllText(jsonPathPrivateKey, privateKeyText);
         }
-
     }
 }

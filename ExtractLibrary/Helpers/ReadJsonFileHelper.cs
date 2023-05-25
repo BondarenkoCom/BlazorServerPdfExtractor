@@ -1,5 +1,4 @@
 ﻿using Newtonsoft.Json.Linq;
-using System.IO;
 
 namespace ExtractLibrary.Helpers
 {

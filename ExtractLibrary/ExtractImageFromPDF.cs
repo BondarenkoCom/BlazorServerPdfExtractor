@@ -3,7 +3,6 @@ using Adobe.PDFServicesSDK.options.extractpdf;
 using Adobe.PDFServicesSDK.pdfops;
 using AdobeExecutionContext = Adobe.PDFServicesSDK.ExecutionContext;
 using SpecFlowPdfReader.Helpers;
-using ExtractLibrary.Helpers;
 
 namespace ExtractLibrary
 {

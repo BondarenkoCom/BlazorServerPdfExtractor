@@ -8,8 +8,10 @@
 @using Microsoft.AspNetCore.Components.Forms
 @using SpecFlowPdfReader.Helpers
 @inject IWebHostEnvironment env
+@inject NavigationManager NavManager
+@inject IJSRuntime JSRuntime
 
-<h3 style="text-align: center; font-family: Arial, sans-serif; margin-bottom: 1rem;">Extract PDF</h3>
+<h3 class="header">Extract PDF</h3>
 
 <div class="modal @ModalClass" id="myModal">
     <div class="modal-content">
@@ -69,7 +71,8 @@
     </div>
 }
 
-<iframe class="pdf-frame" src="@($"/reports/report.pdf?unique={uniqueKey}#zoom=150")" width="100%" height="800px"></iframe>
+
+<iframe class="pdf-frame" src="@($"")" width="100%" height="800px"></iframe>
 
 
 @code {
@@ -83,7 +86,8 @@
     private bool ViewButtonEnabled { get; set; }
     private string pdfSrc { get; set; }
     private bool IsViewClick { get; set; }
-    private string uniqueKey { get; set; } = Guid.NewGuid().ToString();
+    private string uniqueKeyRemove { get; set; } = Guid.NewGuid().ToString();
+    private string uniqueKey { get; set; }
     private string _fileName;
     private string _fileSize;
     private string _reportPath;
@@ -96,6 +100,7 @@
     private bool HasSuccess { get; set; } = false;
     private string SuccessAlert { get; set; }
 
+
     private async Task HandleFileSelected(InputFileChangeEventArgs e)
     {
         string targetFolderPath = JsonHelper.GetFolderTargetForExtract();
@@ -107,32 +112,26 @@
 
         foreach (var file in selectedFiles)
         {
-
-            var path = $"{targetFolderPath}\\{file.Name}";
+            var uniqueFileName = file.Name + "_" + Guid.NewGuid().ToString() + Path.GetExtension(file.Name);
+            var path = $"{targetFolderPath}\\{uniqueFileName}";
             FilePath = path;
-            _fileName = file.Name;
+            _fileName = uniqueFileName;
             _fileSize = file.Size.ToString();
 
-            if (File.Exists(path))
+            using (FileStream fs = File.Create(path))
             {
-                File.Delete(path);
-            }
+                const int bufferSize = 10 * 1024 * 1024; // 10 MB buffer size
+                byte[] buffer = new byte[bufferSize];
 
-            FileStream fs = File.Create(path);
-
-            const int bufferSize = 10 * 1024 * 1024; // 10 MB buffer size
-            byte[] buffer = new byte[bufferSize];
-
-            using (Stream stream = file.OpenReadStream(maxAllowedSize: 104857600)) // 100 MB
-            {
-                int bytesRead;
-                while ((bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length)) > 0)
+                using (Stream stream = file.OpenReadStream(maxAllowedSize: 104857600)) // 100 MB
                 {
-                    await fs.WriteAsync(buffer, 0, bytesRead);
+                    int bytesRead;
+                    while ((bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length)) > 0)
+                    {
+                        await fs.WriteAsync(buffer, 0, bytesRead);
+                    }
                 }
             }
-
-            fs.Close();
         }
         IsLoading = false;
         FileSelected = true;
@@ -141,21 +140,34 @@
 
     private async Task CleanReport()
     {
-        _reportPath = Path.Combine(env.WebRootPath, "reports", "report.pdf");
+        _reportPath = Path.Combine(env.WebRootPath, "reports");
         _tempFoldePath = Path.Combine("tempZip");
+
         try
         {
-            if (File.Exists(_reportPath))
+            DirectoryInfo reportFolder = new DirectoryInfo(_reportPath);
+            if (reportFolder.Exists)
             {
-                File.Delete(_reportPath);
-                RemoveIframeSource(); // delete Iframe source
+                foreach (FileInfo file in reportFolder.GetFiles())
+                {
+                    file.Delete();
+                }
+                foreach (DirectoryInfo dir in reportFolder.GetDirectories())
+                {
+                    dir.Delete(true);
+                }
             }
+
             DirectoryInfo tempFolder = new DirectoryInfo(_tempFoldePath);
             if (tempFolder.Exists)
             {
                 foreach (FileInfo file in tempFolder.GetFiles())
                 {
                     file.Delete();
+                }
+                foreach (DirectoryInfo dir in tempFolder.GetDirectories())
+                {
+                    dir.Delete(true);
                 }
             }
         }
@@ -165,19 +177,29 @@
         }
     }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    protected override void OnInitialized()
     {
-        if (firstRender)
-        {
-            await CleanReport();
-        }
+        NavManager.LocationChanged += NavManager_LocationChanged;
+    }
+
+
+    private void NavManager_LocationChanged(object sender, LocationChangedEventArgs e)
+    {
+        CleanReport();
+    }
+
+    public void Dispose()
+    {
+        NavManager.LocationChanged -= NavManager_LocationChanged;
     }
 
     private void RemoveIframeSource()
     {
-        uniqueKey = Guid.NewGuid().ToString();
-        this.StateHasChanged(); // Update component
+        uniqueKeyRemove = Guid.NewGuid().ToString();
+        this.StateHasChanged();
     }
+
+
 
     private void ToggleModal()
     {
@@ -211,7 +233,7 @@
             }
 
             IsExtracting = false;
-            ViewButtonEnabled = true; // Update the property here
+            ViewButtonEnabled = true;
             this.StateHasChanged();
 
         }
@@ -236,7 +258,6 @@
         string textTableHeader = string.Join("br/", massExctracter.CountElementsTable().Item3);
         string textHeader = string.Join("br/", massExctracter.CountElementsTable().Item4);
 
-
         int countCheckBox = massExctracter.CountElementsCheckBox().Item1;
         string textCheckBox = string.Join("br/", massExctracter.CountElementsCheckBox().Item2);
 
@@ -255,51 +276,64 @@
         string tableTextRowList = string.Join("<br/>", massExctracter.GetSectionTable().Item6);
         string tableTextBulletPointList = string.Join("<br/>", massExctracter.GetSectionTable().Item7);
 
+
         GeneratorPDF generatorPDF = new GeneratorPDF();
-        IsLoading = true;
-        this.StateHasChanged(); // Trigger a re-render to update the PDF embed
 
-        string outputPath = JsonHelper.ReportPathName(env.WebRootPath);
-        generatorPDF.GeneratePDFFromTitle(titleMess,
-            countTableHeader,
-            countHeader,
-            textTableHeader,
-            textHeader,
-            countCheckBox,
-            textCheckBox,
-            fileName,
-            fileSize,
-            dateTime,
-            countParagraph,
-            textParagraph,
-            countTable.ToString(),
-            countTableParagCount.ToString(),
-            countTableRow.ToString(),
-            countTableBulletPoint.ToString(),
-            tableTextParagList.ToString(),
-            tableTextRowList.ToString(),
-            tableTextBulletPointList.ToString(),
-            outputPath);
+        string uniqueKeyForPAth = Guid.NewGuid().ToString().Substring(0, 5);
+        await JSRuntime.InvokeVoidAsync("savePdfSrc", uniqueKeyForPAth);
 
-        //Make Refresh Iframe
-        pdfSrc = outputPath; // Update the pdfSrc variable with the output path
-        this.StateHasChanged(); // Trigger a re-render to update the PDF embed
-        uniqueKey = Guid.NewGuid().ToString();
-        this.StateHasChanged();
-        IsLoading = false;
+        string outputPath = JsonHelper.ReportPathName(env.WebRootPath, uniqueKeyForPAth).Item1;
+
+        await generatorPDF.GenerateрHTMLFromTitle(titleMess,
+          countTableHeader,
+          countHeader,
+          textTableHeader,
+          textHeader,
+          countCheckBox,
+          textCheckBox,
+          fileName,
+          fileSize,
+          dateTime,
+          countParagraph,
+          textParagraph,
+          countTable.ToString(),
+          countTableParagCount.ToString(),
+          countTableRow.ToString(),
+          countTableBulletPoint.ToString(),
+          tableTextParagList.ToString(),
+          tableTextRowList.ToString(),
+          tableTextBulletPointList.ToString(),
+          outputPath);
+
+        pdfSrc = uniqueKeyForPAth;
         this.StateHasChanged();
         IsViewLoading = false;
-        this.StateHasChanged();
+        StateHasChanged();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JSRuntime.InvokeVoidAsync("updateIframeSrc", $"/reports/report_{pdfSrc}.html#zoom=150");
+        }
     }
 }
-
-
 
 <style>
     .container {
         display: flex;
         flex-direction: column;
         align-items: flex-start;
+    }
+
+    .header {
+        text-align: center;
+        font-family: Arial, sans-serif;
+        font-size: 17px;
+        color: #007bff;
+        font-weight: bold;
+        margin-bottom: 20px;
     }
 
     .button-row {
@@ -366,7 +400,8 @@
 
     .pdf-frame {
         margin-top: 50px;
-        border: 15px;
+        border: 5px solid #007bff;
+        border-radius: 15px;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     }
 

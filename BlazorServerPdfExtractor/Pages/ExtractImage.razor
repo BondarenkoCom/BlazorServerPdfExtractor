@@ -9,7 +9,7 @@
 @using SpecFlowPdfReader.Helpers
 @inject IWebHostEnvironment env
 
-<h3 style="text-align: center; font-family: Arial, sans-serif; margin-bottom: 1rem;">Extract Image</h3>
+<h3 class="header">Extract Image</h3>
 
 
 <div class="modal @ModalClass" id="myModal">
@@ -239,6 +239,15 @@
         display: flex;
         flex-direction: column;
         align-items: flex-start;
+    }
+
+    .header {
+        text-align: center;
+        font-family: Arial, sans-serif;
+        font-size: 17px;
+        color: #007bff;
+        font-weight: bold;
+        margin-bottom: 20px;
     }
 
     .button-row {

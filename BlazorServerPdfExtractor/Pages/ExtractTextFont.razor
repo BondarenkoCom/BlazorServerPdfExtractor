@@ -8,8 +8,10 @@
 @using Microsoft.AspNetCore.Components.Forms
 @using SpecFlowPdfReader.Helpers
 @inject IWebHostEnvironment env
+@inject NavigationManager NavManager
+@inject IJSRuntime JSRuntime
 
-<h3 style="text-align: center; font-family: Arial, sans-serif; margin-bottom: 1rem;">Extract text by font</h3>
+<h3 class="header">Extract text by font</h3>
 
 <div class="container">
     <div class="button-row">
@@ -61,13 +63,258 @@
     </div>
 }
 
-<iframe class="pdf-frame" src="@($"/reports/report.pdf?unique={uniqueKey}#zoom=150")" width="100%" height="800px"></iframe>
+<iframe class="pdf-frame" src="@($"")" width="100%" height="800px"></iframe>
+
+@code {
+    private string MyText { get; set; }
+    private string Report { get; set; }
+    private bool IsLoading { get; set; }
+    private bool IsExtracting { get; set; }
+    private bool IsViewLoading { get; set; }
+    private string FilePath { get; set; }
+    private bool ViewButtonEnabled { get; set; }
+    private string pdfSrc { get; set; }
+    private bool IsViewClick { get; set; }
+    private string uniqueKey { get; set; } = Guid.NewGuid().ToString();
+    private string _fileName;
+    private string _fileSize;
+    private string _reportPath;
+    private bool FileSelected { get; set; } = false;
+    private string _tempFoldePath;
+    private string FontType = "TrueType";
+    private bool HasError { get; set; } = false;
+    private string ErrorAlert { get; set; }
+    private bool HasSuccess { get; set; } = false;
+    private string SuccessAlert { get; set; }
+
+    private async Task HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        string targetFolderPath = JsonHelper.GetFolderTargetForExtract();
+        IReadOnlyList<IBrowserFile> selectedFiles;
+        selectedFiles = e.GetMultipleFiles();
+
+        IsLoading = true;
+        this.StateHasChanged();
+
+        foreach (var file in selectedFiles)
+        {
+            var uniqueFileName = file.Name + "_" + Guid.NewGuid().ToString() + Path.GetExtension(file.Name);
+            var path = $"{targetFolderPath}\\{uniqueFileName}";
+            FilePath = path;
+            _fileName = uniqueFileName;
+            _fileSize = file.Size.ToString();
+
+            using (FileStream fs = File.Create(path))
+            {
+                const int bufferSize = 10 * 1024 * 1024; // 10 MB buffer size
+                byte[] buffer = new byte[bufferSize];
+
+                using (Stream stream = file.OpenReadStream(maxAllowedSize: 104857600)) // 100 MB
+                {
+                    int bytesRead;
+                    while ((bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length)) > 0)
+                    {
+                        await fs.WriteAsync(buffer, 0, bytesRead);
+                    }
+                }
+            }
+        }
+        IsLoading = false;
+        FileSelected = true;
+        this.StateHasChanged();
+    }
+
+    private async Task CleanReport()
+    {
+        _reportPath = Path.Combine(env.WebRootPath, "reports");
+        _tempFoldePath = Path.Combine("tempZip");
+
+        try
+        {
+            DirectoryInfo reportFolder = new DirectoryInfo(_reportPath);
+            if (reportFolder.Exists)
+            {
+                foreach (FileInfo file in reportFolder.GetFiles())
+                {
+                    file.Delete();
+                }
+                foreach (DirectoryInfo dir in reportFolder.GetDirectories())
+                {
+                    dir.Delete(true);
+                }
+            }
+
+            DirectoryInfo tempFolder = new DirectoryInfo(_tempFoldePath);
+            if (tempFolder.Exists)
+            {
+                foreach (FileInfo file in tempFolder.GetFiles())
+                {
+                    file.Delete();
+                }
+                foreach (DirectoryInfo dir in tempFolder.GetDirectories())
+                {
+                    dir.Delete(true);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            MyText = ex.Message;
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        NavManager.LocationChanged += NavManager_LocationChanged;
+    }
+
+    private void NavManager_LocationChanged(object sender, LocationChangedEventArgs e)
+    {
+        CleanReport();
+    }
+
+    public void Dispose()
+    {
+        NavManager.LocationChanged -= NavManager_LocationChanged;
+        CleanReport().Wait();
+    }
+
+    private void RemoveIframeSource()
+    {
+        uniqueKey = Guid.NewGuid().ToString();
+        this.StateHasChanged();
+    }
+
+    private async Task ButtonClicked()
+    {
+        string pdfName = FilePath;
+        MyText = $"{pdfName} - begin extract";
+
+        try
+        {
+
+            IsExtracting = true;
+            this.StateHasChanged();
+
+            ExtractPDF extractPDF = new ExtractPDF();
+            var result = await extractPDF.ExtractTextFromPDF(pdfName);
+
+            if (result.Item1 != "Success")
+            {
+                ErrorAlert = $"Error: {result.Item1}";
+                HasError = true;
+            }
+            else
+            {
+                SuccessAlert = result.Item2;
+                HasSuccess = true;
+                HasError = false;
+            }
+
+            IsExtracting = false;
+            ViewButtonEnabled = true;
+            this.StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            MyText = $"Error: {ex.Message}";
+        }
+    }
+
+    private async Task GeneratePDFreport()
+    {
+
+        IsViewLoading = true;
+        this.StateHasChanged();
+
+        DateTime now = DateTime.Now;
+        string dateTime = now.ToString();
+
+        MassExctracter massExctracter = new MassExctracter();
+
+        int countFonts = massExctracter.CountElementFont(FontType).Item1;
+        var textFontsType = string.Join("<hr/>", massExctracter.CountElementFont(FontType).Item2);
+        string textByFonts = FontType;
+
+        GeneratorPDF generatorPDF = new GeneratorPDF();
+        string uniqueKeyForPAth = Guid.NewGuid().ToString().Substring(0, 5);
+
+        await JSRuntime.InvokeVoidAsync("savePdfSrc", uniqueKeyForPAth);
+
+        IsLoading = true;
+        this.StateHasChanged();
+
+        string outputPath = JsonHelper.ReportPathName(env.WebRootPath, uniqueKeyForPAth).Item1;
+
+        var originalFileName = _fileName.Split('_')[0] + Path.GetExtension(_fileName);
+
+        generatorPDF.GeneratePDFFromFont(
+            originalFileName,
+            _fileSize,
+            dateTime,
+            countFonts,
+            textFontsType,
+            textByFonts,
+            outputPath);
+
+        pdfSrc = uniqueKeyForPAth;
+        this.StateHasChanged();
+        uniqueKey = Guid.NewGuid().ToString();
+        this.StateHasChanged();
+        IsViewLoading = false;
+        this.StateHasChanged();
+    }
+
+    private async Task CleanTempFolder()
+    {
+        _tempFoldePath = Path.Combine("tempZip");
+        try
+        {
+            DirectoryInfo tempFolder = new DirectoryInfo(_tempFoldePath);
+            if (tempFolder.Exists)
+            {
+                foreach (FileInfo file in tempFolder.GetFiles())
+                {
+                    try
+                    {
+                        file.Delete();
+                    }
+                    catch (IOException ex)
+                    {
+                        MyText = $"Error: {ex.Message}";
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            MyText = ex.Message;
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JSRuntime.InvokeVoidAsync("updateIframeSrc", $"/reports/report_{pdfSrc}.html#zoom=150");
+        }
+    }
+}
 
 <style>
     .container {
         display: flex;
         flex-direction: column;
         align-items: flex-start;
+    }
+
+    .header {
+        text-align: center;
+        font-family: Arial, sans-serif;
+        font-size: 17px;
+        color: #007bff;
+        font-weight: bold;
+        margin-bottom: 20px;
     }
 
     .button-row {
@@ -128,186 +375,8 @@
 
     .pdf-frame {
         margin-top: 50px;
-        border: 15px;
+        border: 5px solid #007bff;
+        border-radius: 15px;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     }
 </style>
-
-@code {
-    private string MyText { get; set; }
-    private string Report { get; set; }
-    private bool IsLoading { get; set; }
-    private bool IsExtracting { get; set; }
-    private bool IsViewLoading { get; set; }
-    private string FilePath { get; set; }
-    private bool ViewButtonEnabled { get; set; }
-    private string pdfSrc { get; set; }
-    private bool IsViewClick { get; set; }
-    private string uniqueKey { get; set; } = Guid.NewGuid().ToString();
-    private string _fileName;
-    private string _fileSize;
-    private string _reportPath;
-    private bool FileSelected { get; set; } = false;
-    private string _tempFoldePath;
-    private string FontType = "TrueType";
-    private bool HasError { get; set; } = false;
-    private string ErrorAlert { get; set; }
-    private bool HasSuccess { get; set; } = false;
-    private string SuccessAlert { get; set; }
-
-    private async Task HandleFileSelected(InputFileChangeEventArgs e)
-    {
-        string targetFolderPath = JsonHelper.GetFolderTargetForExtract();
-        IReadOnlyList<IBrowserFile> selectedFiles;
-        selectedFiles = e.GetMultipleFiles();
-
-        IsLoading = true;
-        this.StateHasChanged();
-
-        foreach (var file in selectedFiles)
-        {
-            var path = $"{targetFolderPath}\\{file.Name}";
-            FilePath = path;
-            _fileName = file.Name;
-            _fileSize = file.Size.ToString();
-
-            if (File.Exists(path))
-            {
-                File.Delete(path);
-            }
-
-            FileStream fs = File.Create(path);
-
-            const int bufferSize = 10 * 1024 * 1024; // 10 MB buffer size
-            byte[] buffer = new byte[bufferSize];
-
-            using (Stream stream = file.OpenReadStream(maxAllowedSize: 104857600)) // 100 MB
-            {
-                int bytesRead;
-                while ((bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length)) > 0)
-                {
-                    await fs.WriteAsync(buffer, 0, bytesRead);
-                }
-            }
-            fs.Close();
-        }
-        IsLoading = false;
-        FileSelected = true;
-        this.StateHasChanged();
-    }
-
-    private async Task CleanReport()
-    {
-        _reportPath = Path.Combine(env.WebRootPath, "reports", "report.pdf");
-        _tempFoldePath = Path.Combine("tempZip");
-        try
-        {
-            if (File.Exists(_reportPath))
-            {
-                File.Delete(_reportPath);
-                RemoveIframeSource(); // delete Iframe source
-            }
-            DirectoryInfo tempFolder = new DirectoryInfo(_tempFoldePath);
-            if (tempFolder.Exists)
-            {
-                foreach (FileInfo file in tempFolder.GetFiles())
-                {
-                    file.Delete();
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            MyText = ex.Message;
-        }
-    }
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender)
-        {
-            await CleanReport();
-        }
-    }
-
-    private void RemoveIframeSource()
-    {
-        uniqueKey = Guid.NewGuid().ToString();
-        this.StateHasChanged(); // Update component
-    }
-
-    private async void ButtonClicked()
-    {
-        string pdfName = FilePath;
-        MyText = $"{pdfName} - begin extract";
-
-        try
-        {
-            IsExtracting = true;
-            this.StateHasChanged();
-
-            ExtractPDF extractPDF = new ExtractPDF();
-            var result = await extractPDF.ExtractTextFromPDF(pdfName);
-
-            if (result.Item1 != "Success")
-            {
-                ErrorAlert = $"Error: {result.Item1}";
-                HasError = true;
-            }
-            else
-            {
-                SuccessAlert = result.Item2;
-                HasSuccess = true;
-                HasError = false;
-            }
-
-            IsExtracting = false;
-            ViewButtonEnabled = true; // Update the property here
-            this.StateHasChanged();
-        }
-        catch (Exception ex)
-        {
-            MyText = $"Error: {ex.Message}";
-        }
-    }
-
-    private async void GeneratePDFreport()
-    {
-        //TrueType
-        IsViewLoading = true;
-        this.StateHasChanged();
-
-        DateTime now = DateTime.Now;
-        string dateTime = now.ToString();
-
-        MassExctracter massExctracter = new MassExctracter();
-
-        int countFonts = massExctracter.CountElementFont(FontType).Item1;
-        var textFontsType = string.Join("<hr/>", massExctracter.CountElementFont(FontType).Item2);
-        string textByFonts = FontType;
-
-        GeneratorPDF generatorPDF = new GeneratorPDF();
-        IsLoading = true;
-        this.StateHasChanged(); // Trigger a re-render to update the PDF embed
-
-        string outputPath = JsonHelper.ReportPathName(env.WebRootPath);
-
-        generatorPDF.GeneratePDFFromFont(
-            _fileName,
-            _fileSize,
-            dateTime,
-            countFonts,
-            textFontsType,
-            textByFonts,
-            outputPath);
-
-        pdfSrc = outputPath; // Update the pdfSrc variable with the output path
-        this.StateHasChanged(); // Trigger a re-render to update the PDF embed
-        uniqueKey = Guid.NewGuid().ToString();
-        this.StateHasChanged();
-        IsLoading = false;
-        this.StateHasChanged();
-        IsViewLoading = false;
-        this.StateHasChanged();
-    }
-}

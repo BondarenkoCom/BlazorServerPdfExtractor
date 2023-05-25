@@ -57,8 +57,8 @@ namespace ExtractLibrary
 
                 foreach (var prop in obj1.Properties())
                 {
-                    // Ignore the specified properties
-                    if (prop.Name.Equals("extended_metadata") || prop.Name.Equals("Bounds") || prop.Name.Equals("Extended Bounds"))
+                    if (prop.Name.Equals("extended_metadata") || prop.Name.Equals("Bounds") 
+                        || prop.Name.Equals("Extended Bounds" ) || prop.Name.Equals("ClipBounds"))
                         continue;
 
                     var propPath = !string.IsNullOrEmpty(path) ? $"{path}.{prop.Name}" : prop.Name;
@@ -74,15 +74,14 @@ namespace ExtractLibrary
 
                 foreach (var prop in obj2.Properties())
                 {
-                    // Ignore the specified properties
-                    if (prop.Name.Equals("extended_metadata") || prop.Name.Equals("Bounds") 
+                    if (prop.Name.Equals("extended_metadata") || prop.Name.Equals("Bounds")
                         || prop.Name.Equals("Extended Bounds") || prop.Name.Equals("ClipBounds"))
                         continue;
 
                     var propPath = !string.IsNullOrEmpty(path) ? $"{path}.{prop.Name}" : prop.Name;
                     if (!obj1.ContainsKey(prop.Name))
                     {
-                        differences[propPath] = (null, prop.Value.ToString() + " (No such element in file 1)");
+                        differences[propPath] = (null, prop.Value.ToString());
                     }
                 }
             }
@@ -113,10 +112,6 @@ namespace ExtractLibrary
             else if (!JToken.DeepEquals(token1, token2))
             {
                 differences[path] = (token1.ToString(), token2.ToString());
-            }
-            else
-            {
-                differences[path] = (token1.ToString(), "No differences with file 1 or this element does not exist.");
             }
         }
     }

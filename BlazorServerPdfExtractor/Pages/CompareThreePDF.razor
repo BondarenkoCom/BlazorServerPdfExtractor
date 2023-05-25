@@ -7,6 +7,8 @@
 @using SpecFlowPdfReader.Helpers
 @using System.Text
 @inject IWebHostEnvironment env
+@inject NavigationManager NavManager
+@inject IJSRuntime JSRuntime
 
 <h3 class="header">Compare three PDF</h3>
 
@@ -82,11 +84,7 @@
 @if (HasSuccess)
 {
     <div class="alert alert-success success-message" role="alert">
-        Operation was successful! File first saved to: @SuccessAlert
-        <br>
-        Operation was successful! File Second saved to: @SuccessAlertSecond
-        <br>
-        Operation was successful! File Third saved to: @SuccessAlertThird
+        Operation was successful!
     </div>
 }
 
@@ -125,7 +123,7 @@
     </div>
 }
 
-<iframe class="pdf-frame" src="@($"/reports/report.pdf?unique={uniqueKey}#zoom=150")" width="100%" height="800px"></iframe>
+<iframe class="pdf-frame" src="@($"")" width="100%" height="800px"></iframe>
 
 @code {
     private string _message = "";
@@ -162,6 +160,8 @@
     private string SuccessAlertSecond { get; set; }
     private string SuccessAlertThird { get; set; }
     private string ModalClass { get; set; } = "modal-hidden";
+    private bool isReportLoadedInIframe = false;
+
 
     private async void ComparePDFfiles()
     {
@@ -185,11 +185,12 @@
             ExtractPDF extractPDFCopyFirst = new ExtractPDF();
             var resultFirst = await extractPDFCopyFirst.ExtractTextFromPDFForCompare(pdfNameFirst);
 
-            if (resultFirst.Item2 == "Success")
+            if (resultFirst.Item2 == "Success" && !isReportLoadedInIframe)
             {
                 isFile1Extracted = true;
                 HasSuccess = true;  // Set success to true
                 SuccessAlert = resultFirst.Item1;
+                await InvokeAsync(StateHasChanged);
             }
             else
             {
@@ -202,8 +203,9 @@
             if (resultSecond.Item2 == "Success")
             {
                 isFile2Extracted = true;
-                HasSuccess = true;  // Set success to true
-                SuccessAlertSecond = resultSecond.Item1;  // Update SuccessAlert to the successful file path
+                HasSuccess = true;
+                SuccessAlertSecond = resultSecond.Item1;
+                await InvokeAsync(StateHasChanged);
             }
             else
             {
@@ -218,18 +220,17 @@
                 isFile3Extracted = true;
                 HasSuccess = true;
                 SuccessAlertThird = resultThird.Item1;
+                await InvokeAsync(StateHasChanged);
             }
             else
             {
                 extractError2 = resultThird.Item2;
             }
 
-
             Console.WriteLine($"First path - {resultFirst} \nSecond path - {resultSecond} \nThird path - {resultThird}");
             OutputText = $"First path - {resultFirst} \nSecond path - {resultSecond} \nThird path - {resultThird}";
 
             ComparingPDF comparingPDF = new ComparingPDF();
-
             Dictionary<string, (string, string, string)> differences = comparingPDF.TestCompareThree(
                 resultFirst.Item1, resultSecond.Item1, resultThird.Item1);
 
@@ -251,33 +252,56 @@
             {
                 StringBuilder reportBuilder = new StringBuilder();
 
+                reportBuilder.AppendLine($"<div class=\"file-info\">");
+                reportBuilder.AppendLine($"  <h3 class=\"file-name\">File Name 1: {_fileNameFirst}</h3>");
+                reportBuilder.AppendLine($"  <p class=\"file-path\">Path: {resultFirst.Item1}</p>");
+                reportBuilder.AppendLine($"</div>");
+                reportBuilder.AppendLine($"<div class=\"file-info\">");
+                reportBuilder.AppendLine($"  <h3 class=\"file-name\">File Name 2: {_fileNameSecond}</h3>");
+                reportBuilder.AppendLine($"  <p class=\"file-path\">Path: {resultSecond.Item1}</p>");
+                reportBuilder.AppendLine($"</div>");
+                reportBuilder.AppendLine($"<div class=\"file-info\">");
+                reportBuilder.AppendLine($"  <h3 class=\"file-name\">File Name 3: {_fileNameThird}</h3>");
+                reportBuilder.AppendLine($"  <p class=\"file-path\">Path: {resultThird.Item1}</p>");
+                reportBuilder.AppendLine($"</div>");
+
                 foreach (var diff in differences)
                 {
                     reportBuilder.AppendLine($"<div class=\"difference\">");
                     reportBuilder.AppendLine($"  <h3 class=\"difference-key\">Result Differences - {diff.Key}:</h3>");
-                    reportBuilder.AppendLine($"  <div class=\"difference-file1\"><span style='color: green; font-weight: bold;'>{_fileNameFirst}:</span> <span style='background-color: #e8f5e9;'>{diff.Value.Item1}</span></div>");
-                    reportBuilder.AppendLine($"  <div class=\"difference-file2\"><span style='color: blue; font-weight: bold;'>{_fileNameSecond}:</span> <span style='background-color: #e3f2fd;'>{diff.Value.Item2}</span></div>");
-                    reportBuilder.AppendLine($"  <div class=\"difference-file3\"><span style='color: red; font-weight: bold;'>{_fileNameThird}:</span> <span style='background-color: #ffebee;'>{diff.Value.Item3}</span></div>");
+                    if (!string.IsNullOrEmpty(diff.Value.Item1))
+                    {
+                        reportBuilder.AppendLine($"  <div class=\"difference-file1\"><span style='color: green; font-weight: bold;'>{_fileNameFirst}:</span> <span style='background-color: #e8f5e9;'>{diff.Value.Item1}</span></div>");
+                    }
+                    if (!string.IsNullOrEmpty(diff.Value.Item2))
+                    {
+                        reportBuilder.AppendLine($"  <div class=\"difference-file2\"><span style='color: blue; font-weight: bold;'>{_fileNameSecond}:</span> <span style='background-color: #e3f2fd;'>{diff.Value.Item2}</span></div>");
+                    }
+                    if (!string.IsNullOrEmpty(diff.Value.Item3))
+                    {
+                        reportBuilder.AppendLine($"  <div class=\"difference-file3\"><span style='color: red; font-weight: bold;'>{_fileNameThird}:</span> <span style='background-color: #ffebee;'>{diff.Value.Item3}</span></div>");
+                    }
                     reportBuilder.AppendLine($"</div>");
                 }
 
                 GeneratorPDF generatorPDF = new GeneratorPDF();
-                string outputPath = JsonHelper.ReportPathName(env.WebRootPath);
+
+                string uniqueKeyForPAth = Guid.NewGuid().ToString().Substring(0, 5);
+                await JSRuntime.InvokeVoidAsync("savePdfSrc", uniqueKeyForPAth);
+
+                string outputPath = JsonHelper.ReportPathName(env.WebRootPath, uniqueKeyForPAth).Item1;
 
                 try
                 {
-                    generatorPDF.GeneratePDFForCompare(_fileNameFirst, _fileNameSecond, _fileNameThird, dateTime, reportBuilder.ToString(), outputPath);
+                    generatorPDF.GeneratePDFForCompare(_fileNameFirst, _fileNameSecond, _fileNameThird,
+                        dateTime, reportBuilder.ToString(), outputPath);
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine($"Error message - {ex.Message}");
                 }
-                pdfSrc = outputPath; // Update the pdfSrc variable with the output path
+                pdfSrc = uniqueKeyForPAth;
                 this.StateHasChanged();
-
-                uniqueKey = Guid.NewGuid().ToString(); // Update the uniqueKey variable to force a refresh
-                this.StateHasChanged();
-
             }
             IsCompare = false;
             this.StateHasChanged();
@@ -302,21 +326,34 @@
 
     private async Task CleanReport()
     {
-        _reportPath = Path.Combine(env.WebRootPath, "reports", "report.pdf");
+        _reportPath = Path.Combine(env.WebRootPath, "reports");
         _tempFoldePath = Path.Combine("tempZip");
+
         try
         {
-            if (File.Exists(_reportPath))
+            DirectoryInfo reportFolder = new DirectoryInfo(_reportPath);
+            if (reportFolder.Exists)
             {
-                File.Delete(_reportPath);
-                RemoveIframeSource(); // delete Iframe source
+                foreach (FileInfo file in reportFolder.GetFiles())
+                {
+                    file.Delete();
+                }
+                foreach (DirectoryInfo dir in reportFolder.GetDirectories())
+                {
+                    dir.Delete(true);
+                }
             }
+
             DirectoryInfo tempFolder = new DirectoryInfo(_tempFoldePath);
             if (tempFolder.Exists)
             {
                 foreach (FileInfo file in tempFolder.GetFiles())
                 {
                     file.Delete();
+                }
+                foreach (DirectoryInfo dir in tempFolder.GetDirectories())
+                {
+                    dir.Delete(true);
                 }
             }
         }
@@ -326,18 +363,25 @@
         }
     }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender)
-        {
-            await CleanReport();
-        }
-    }
-
     private void RemoveIframeSource()
     {
         uniqueKey = Guid.NewGuid().ToString();
-        this.StateHasChanged(); // Update component
+        this.StateHasChanged();
+    }
+
+    protected override void OnInitialized()
+    {
+        NavManager.LocationChanged += NavManager_LocationChanged;
+    }
+
+    private void NavManager_LocationChanged(object sender, LocationChangedEventArgs e)
+    {
+        CleanReport();
+    }
+
+    public void Dispose()
+    {
+        NavManager.LocationChanged -= NavManager_LocationChanged;
     }
 
     private async Task OnFileSelected(InputFileChangeEventArgs e, int copyNumber)
@@ -351,7 +395,9 @@
 
         foreach (var file in selectedFiles)
         {
-            var pathCopy = $"{targetFolderPath}\\Copy{copyNumber}{file.Name}";
+            string uniqueIdentifier = Guid.NewGuid().ToString().Substring(0, 5);
+
+            var pathCopy = $"{targetFolderPath}\\{uniqueIdentifier}Copy{copyNumber}{file.Name}";
 
 
             if (File.Exists(pathCopy))
@@ -401,6 +447,14 @@
         }
         IsLoading = false;
         this.StateHasChanged();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JSRuntime.InvokeVoidAsync("updateIframeSrc", $"/reports/report_{pdfSrc}.html#zoom=150");
+        }
     }
 }
 
@@ -530,7 +584,8 @@
 
     .pdf-frame {
         margin-top: 50px;
-        border: 15px;
+        border: 5px solid #007bff;
+        border-radius: 15px;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     }
 

@@ -9,16 +9,14 @@ namespace ExtractLibrary.Helpers
             {
                 DirectoryInfo di = new DirectoryInfo(folderPath);
 
-                // Delete all files in the directory
                 foreach (FileInfo file in di.GetFiles())
                 {
                     file.Delete();
                 }
 
-                // Delete all subdirectories in the directory
                 foreach (DirectoryInfo dir in di.GetDirectories())
                 {
-                    dir.Delete(true); // 'true' parameter indicates to delete the subdirectory and its contents recursively
+                    dir.Delete(true);
                 }
 
                 return "Folder contents cleared successfully.";

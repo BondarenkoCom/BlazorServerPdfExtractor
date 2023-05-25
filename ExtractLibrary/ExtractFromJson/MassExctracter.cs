@@ -1,7 +1,5 @@
 ﻿using ExtractLibrary.Const;
-using ExtractLibrary.Models;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using NUnit.Framework;
 using SpecFlowPdfReader.Helpers;
 

@@ -15,7 +15,6 @@ namespace ExtractLibrary
         private string? jsonResut = JsonHelper.GetValues().jsonPath;
         readonly ZipExtractor resExtract = new ZipExtractor();
 
-        //public async Task<string> ExtractTextFromPDF(string pdfFilePath)
         public async Task<Tuple<string, string>> ExtractTextFromPDF(string pdfFilePath)
         {
             try
@@ -44,13 +43,11 @@ namespace ExtractLibrary
                     File.Delete(zipResult);
                 }
 
-                // Ensure the directory exists
                 Directory.CreateDirectory(Path.GetDirectoryName(zipResult));
 
                 result.SaveAs(zipResult);
 
                 resExtract.ExtractZip(zipResult);
-                //return "Success";
                 return new Tuple<string, string>("Success", zipResult);
 
             }
@@ -77,8 +74,8 @@ namespace ExtractLibrary
 
 
                 Adobe.PDFServicesSDK.auth.Credentials credentials = Adobe.PDFServicesSDK.auth.Credentials.ServiceAccountCredentialsBuilder()
-            .FromFile(credentialsFilePath)
-            .Build();
+                    .FromFile(credentialsFilePath)
+                    .Build();
 
                 FileRef sourceFileRef = FileRef.CreateFromLocalFile(pdfFilePath);
 
