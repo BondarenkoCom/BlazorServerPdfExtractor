@@ -2,7 +2,8 @@
 {
     public class GeneratorPDF
     {
-        public void GeneratePDFFromFont(
+        public void GenerateHtmlFromFont(
+            string? jsonFileName,
             string? fileName,
             string? fileSize,
             string? dateTime,
@@ -18,6 +19,11 @@
                 countTextFonts = 0;
                 textFontType = "empty";
                 textFont = "emtpy";
+            }
+
+            if (fileName.Contains("_"))
+            {
+                fileName = fileName.Substring(0, fileName.IndexOf("_"));
             }
 
             string htmlContent = $@"
@@ -48,8 +54,9 @@
                             </style>
                         </head>
                         <body>
-                            <h1>PDF Report</h1>
+                            <h1>HTML Report</h1>
                             <h3>Filename: {fileName}</h3>
+                            <h3>JSON File Name: {jsonFileName}</h3
                             <h3>Size: {fileSize}</h3>
                             <h3>Datetime: {dateTime}</h3>
                             <h2>Result:</h2>
@@ -70,6 +77,7 @@
         }
 
         public async Task GenerateрHTMLFromTitle(
+            string? jsonFileName,
             string? title,
             int? countTableHeader,
             int? countHeader,
@@ -105,41 +113,96 @@
                 countTableBulletPoint = "empty";
             }
 
-            string htmlContent = $@"
-                <html>
-                    <head>
-                        <style>
-                            h1, h2, h3 {{
-                                margin-bottom: 10px;
-                            }}
-                        </style>
-                    </head>
-                    <body>
-                        <h1>{title}</h1>
-                        <h3>Filename: {fileName}</h3>
-                        <h3>Size: {fileSize}</h3>
-                        <h3>Datetime: {dateTime}</h3>
-                        <h2>Result:</h2>
-                        <ul>
-                            <li>Standard PDF:</li>
-                            <li>Language:</li>
-                            <li>Natural Language:</li>
-                            <li>Embedded Files:</li>
-                        </ul>
-                        <h2>Element counts:</h2>
-                        <ul>
-                            <li>Table headers: {countTableHeader}<br/>{textTableHeader}</li>
-                            <li>Headers: {countHeader}<br/>{textHeader}</li>
-                            <li>Check box: {countCheckBox}<br/>{textCheckBox}</li>
-                            <li>Paragraph: {countParagraph}<br/>{textParagraph}</li>
-                            <li>Table count: {countTable}</li>
-                            <li>Table Parag Count: {countTableParagCount}<br/>{textTableparag}</li>
-                            <li>Table table row: {countTableRow}<br/>{textTableTextRow}</li>
-                            <li>count bullet point: {countTableBulletPoint}<br/>{textTableBulletPoint}</li>
-                        </ul>
-                    </body>
-                </html>";
+            if (fileName.Contains("_"))
+            {
+                fileName = fileName.Substring(0, fileName.IndexOf("_"));
+            }
 
+            string htmlContent = $@"
+                    <html>
+                        <head>
+                            <style>
+                                body {{
+                                    font-family: Arial, sans-serif;
+                                }}
+                                h1, h2, h3 {{
+                                    margin-bottom: 10px;
+                                }}
+                                .highlight {{
+                                    color: red;
+                                }}
+                                .underline {{
+                                    text-decoration: underline;
+                                }}
+                                table {{
+                                    width: 100%;
+                                    border-collapse: collapse;
+                                }}
+                                th, td {{
+                                    border: 1px solid #ddd;
+                                    padding: 8px;
+                                }}
+                                th {{
+                                    background-color: #f2f2f2;
+                                }}
+                            </style>
+                        </head>
+                        <body>
+                            <h1>{title}</h1>
+                            <h3 class='highlight'>Filename: {fileName}</h3>
+                            <h3>JSON File Name: {jsonFileName}</h3>
+                            <h3>Size: {fileSize}</h3>
+                            <h3>Datetime: {dateTime}</h3>
+                            <h2 class='underline'>Element counts:</h2>
+                            <table>
+                                <tr>
+                                    <th>Element</th>
+                                    <th>Count</th>
+                                    <th>Text</th>
+                                </tr>
+                                <tr>
+                                    <td>Table headers</td>
+                                    <td>{countTableHeader}</td>
+                                    <td>{textTableHeader}</td>
+                                </tr>
+                                <tr>
+                                    <td>Headers</td>
+                                    <td>{countHeader}</td>
+                                    <td>{textHeader}</td>
+                                </tr>
+                                <tr>
+                                    <td>Check box</td>
+                                    <td>{countCheckBox}</td>
+                                    <td>{textCheckBox}</td>
+                                </tr>
+                                <tr>
+                                    <td>Paragraph</td>
+                                    <td>{countParagraph}</td>
+                                    <td>{textParagraph}</td>
+                                </tr>
+                                <tr>
+                                    <td>Table count</td>
+                                    <td>{countTable}</td>
+                                    <td></td>
+                                </tr>
+                                <tr>
+                                    <td>Table Parag Count</td>
+                                    <td>{countTableParagCount}</td>
+                                    <td>{textTableparag}</td>
+                                </tr>
+                                <tr>
+                                    <td>Table table row</td>
+                                    <td>{countTableRow}</td>
+                                    <td>{textTableTextRow}</td>
+                                </tr>
+                                <tr>
+                                    <td>Count bullet point</td>
+                                    <td>{countTableBulletPoint}</td>
+                                    <td>{textTableBulletPoint}</td>
+                                </tr>
+                            </table>
+                        </body>
+                    </html>";
 
 
             string tempFilePath = Path.GetTempPath() + Guid.NewGuid().ToString().Substring(0, 5) + ".html";
@@ -155,7 +218,7 @@
         }
 
 
-        public void GeneratePDFForCompare(string? titleFirst, string? titleSecond, string? titleThird, string? date, string? difference, string? outputPath)
+        public void GenerateHtmlForCompare(string? titleFirst, string? titleSecond, string? titleThird, string? date, string? difference, string? outputPath)
         {
 
             if (string.IsNullOrEmpty(titleFirst) || string.IsNullOrEmpty(titleSecond) || string.IsNullOrEmpty(titleThird))

@@ -89,39 +89,50 @@
 
     private async Task HandleFileSelected(InputFileChangeEventArgs e)
     {
-        string targetFolderPath = JsonHelper.GetFolderTargetForExtract();
-        IReadOnlyList<IBrowserFile> selectedFiles;
-        selectedFiles = e.GetMultipleFiles();
-
-        IsLoading = true;
-        this.StateHasChanged();
-
-        foreach (var file in selectedFiles)
+        try
         {
-            var uniqueFileName = file.Name + "_" + Guid.NewGuid().ToString() + Path.GetExtension(file.Name);
-            var path = $"{targetFolderPath}\\{uniqueFileName}";
-            FilePath = path;
-            _fileName = uniqueFileName;
-            _fileSize = file.Size.ToString();
 
-            using (FileStream fs = File.Create(path))
+            string targetFolderPath = JsonHelper.GetFolderTargetForExtract();
+            IReadOnlyList<IBrowserFile> selectedFiles;
+            selectedFiles = e.GetMultipleFiles();
+
+            IsLoading = true;
+            this.StateHasChanged();
+
+            foreach (var file in selectedFiles)
             {
-                const int bufferSize = 10 * 1024 * 1024; // 10 MB buffer size
-                byte[] buffer = new byte[bufferSize];
+                var uniqueFileName = file.Name + "_" + Guid.NewGuid().ToString() + Path.GetExtension(file.Name);
+                var path = $"{targetFolderPath}\\{uniqueFileName}";
+                FilePath = path;
+                _fileName = uniqueFileName;
+                _fileSize = file.Size.ToString();
 
-                using (Stream stream = file.OpenReadStream(maxAllowedSize: 104857600)) // 100 MB
+                using (FileStream fs = File.Create(path))
                 {
-                    int bytesRead;
-                    while ((bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length)) > 0)
+                    const int bufferSize = 10 * 1024 * 1024; // 10 MB buffer size
+                    byte[] buffer = new byte[bufferSize];
+
+                    using (Stream stream = file.OpenReadStream(maxAllowedSize: 104857600)) // 100 MB
                     {
-                        await fs.WriteAsync(buffer, 0, bytesRead);
+                        int bytesRead;
+                        while ((bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length)) > 0)
+                        {
+                            await fs.WriteAsync(buffer, 0, bytesRead);
+                        }
                     }
                 }
             }
+            IsLoading = false;
+            FileSelected = true;
+            this.StateHasChanged();
         }
-        IsLoading = false;
-        FileSelected = true;
-        this.StateHasChanged();
+        catch (Exception ex)
+        {
+            HasError = true;
+            IsLoading = false;
+            ErrorAlert = ex.Message;
+            this.StateHasChanged();
+        }
     }
 
     private async Task CleanReport()
@@ -159,7 +170,9 @@
         }
         catch (Exception ex)
         {
-            MyText = ex.Message;
+            HasError = true;
+            ErrorAlert = ex.Message;
+            this.StateHasChanged();
         }
     }
 
@@ -223,46 +236,54 @@
 
     private async Task GeneratePDFreport()
     {
+        try
+        {
+            IsViewLoading = true;
+            this.StateHasChanged();
 
-        IsViewLoading = true;
-        this.StateHasChanged();
+            DateTime now = DateTime.Now;
+            string dateTime = now.ToString();
 
-        DateTime now = DateTime.Now;
-        string dateTime = now.ToString();
+            string jsonFileName = SuccessAlert;
+            MassExctracter massExctracter = new MassExctracter(jsonFileName);
+            
+            int countFonts = massExctracter.CountElementFont(FontType).Item1;
+            var textFontsType = string.Join("<hr/>", massExctracter.CountElementFont(FontType).Item2);
+            string textByFonts = FontType;
 
-        MassExctracter massExctracter = new MassExctracter();
+            GeneratorPDF generatorPDF = new GeneratorPDF();
+            string uniqueKeyForPAth = Guid.NewGuid().ToString().Substring(0, 5);
 
-        int countFonts = massExctracter.CountElementFont(FontType).Item1;
-        var textFontsType = string.Join("<hr/>", massExctracter.CountElementFont(FontType).Item2);
-        string textByFonts = FontType;
+            await JSRuntime.InvokeVoidAsync("savePdfSrc", uniqueKeyForPAth);
 
-        GeneratorPDF generatorPDF = new GeneratorPDF();
-        string uniqueKeyForPAth = Guid.NewGuid().ToString().Substring(0, 5);
+            IsLoading = true;
+            this.StateHasChanged();
 
-        await JSRuntime.InvokeVoidAsync("savePdfSrc", uniqueKeyForPAth);
+            string outputPath = JsonHelper.ReportPathName(env.WebRootPath, uniqueKeyForPAth).Item1;
 
-        IsLoading = true;
-        this.StateHasChanged();
+            generatorPDF.GenerateHtmlFromFont(
+                jsonFileName,
+                _fileName,
+                _fileSize,
+                dateTime,
+                countFonts,
+                textFontsType,
+                textByFonts,
+                outputPath);
 
-        string outputPath = JsonHelper.ReportPathName(env.WebRootPath, uniqueKeyForPAth).Item1;
-
-        var originalFileName = _fileName.Split('_')[0] + Path.GetExtension(_fileName);
-
-        generatorPDF.GeneratePDFFromFont(
-            originalFileName,
-            _fileSize,
-            dateTime,
-            countFonts,
-            textFontsType,
-            textByFonts,
-            outputPath);
-
-        pdfSrc = uniqueKeyForPAth;
-        this.StateHasChanged();
-        uniqueKey = Guid.NewGuid().ToString();
-        this.StateHasChanged();
-        IsViewLoading = false;
-        this.StateHasChanged();
+            pdfSrc = uniqueKeyForPAth;
+            this.StateHasChanged();
+            uniqueKey = Guid.NewGuid().ToString();
+            this.StateHasChanged();
+            IsViewLoading = false;
+            this.StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            HasError = true;
+            ErrorAlert = ex.Message;
+            this.StateHasChanged();
+        }
     }
 
     private async Task CleanTempFolder()

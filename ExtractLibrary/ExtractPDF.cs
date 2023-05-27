@@ -46,9 +46,9 @@ namespace ExtractLibrary
                 Directory.CreateDirectory(Path.GetDirectoryName(zipResult));
 
                 result.SaveAs(zipResult);
-
-                resExtract.ExtractZip(zipResult);
-                return new Tuple<string, string>("Success", zipResult);
+                string randomString = RandomStringName.GenerateRandomString(5);
+                var path = resExtract.ExtractZipCopy(zipResult, randomString);
+                return Tuple.Create("Success",path);
 
             }
             catch (Exception ex)

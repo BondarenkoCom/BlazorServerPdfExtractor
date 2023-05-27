@@ -7,7 +7,14 @@ namespace ExtractLibrary.ExtractFromJson
 {
     public class MassExctracter
     {
-        private string? jsonResut = JsonHelper.GetJsonFile();
+        private string? jsonResut;
+
+        //string jsonResut = JsonHelper.GetJsonFile("C9E2p");
+
+        public MassExctracter(string jsonFileName)
+        {
+            jsonResut = JsonHelper.GetJsonFile(jsonFileName);
+        }
 
         public string CountTitle()
         {
@@ -42,7 +49,7 @@ namespace ExtractLibrary.ExtractFromJson
             {
                 try
                 {
-                    if (element.Text.Contains(PdfCheckPaths.pdfTableHeader))
+                    if (element.Text.Contains(PdfCheckPaths.pdfTableHeader, StringComparison.OrdinalIgnoreCase))
                     {
                         tableHeaderCount++;
                         textHeaderList.Add(element.Text);

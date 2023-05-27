@@ -71,9 +71,7 @@
     </div>
 }
 
-
 <iframe class="pdf-frame" src="@($"")" width="100%" height="800px"></iframe>
-
 
 @code {
 
@@ -99,43 +97,55 @@
     private string ModalClass { get; set; } = "modal-hidden";
     private bool HasSuccess { get; set; } = false;
     private string SuccessAlert { get; set; }
-
+    private Tuple<string, string> result;
 
     private async Task HandleFileSelected(InputFileChangeEventArgs e)
     {
-        string targetFolderPath = JsonHelper.GetFolderTargetForExtract();
-        IReadOnlyList<IBrowserFile> selectedFiles;
-        selectedFiles = e.GetMultipleFiles();
-
-        IsLoading = true;
-        this.StateHasChanged();
-
-        foreach (var file in selectedFiles)
+        try
         {
-            var uniqueFileName = file.Name + "_" + Guid.NewGuid().ToString() + Path.GetExtension(file.Name);
-            var path = $"{targetFolderPath}\\{uniqueFileName}";
-            FilePath = path;
-            _fileName = uniqueFileName;
-            _fileSize = file.Size.ToString();
+            string targetFolderPath = JsonHelper.GetFolderTargetForExtract();
+            IReadOnlyList<IBrowserFile> selectedFiles;
+            selectedFiles = e.GetMultipleFiles();
 
-            using (FileStream fs = File.Create(path))
+            IsLoading = true;
+            this.StateHasChanged();
+
+            foreach (var file in selectedFiles)
             {
-                const int bufferSize = 10 * 1024 * 1024; // 10 MB buffer size
-                byte[] buffer = new byte[bufferSize];
+                var uniqueFileName = file.Name + "_" + Guid.NewGuid().ToString() + Path.GetExtension(file.Name);
+                var path = $"{targetFolderPath}\\{uniqueFileName}";
+                FilePath = path;
+               
+                _fileName = uniqueFileName;
+                _fileSize = file.Size.ToString();
 
-                using (Stream stream = file.OpenReadStream(maxAllowedSize: 104857600)) // 100 MB
+                using (FileStream fs = File.Create(path))
                 {
-                    int bytesRead;
-                    while ((bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length)) > 0)
+                    const int bufferSize = 10 * 1024 * 1024; // 10 MB buffer size
+                    byte[] buffer = new byte[bufferSize];
+
+                    using (Stream stream = file.OpenReadStream(maxAllowedSize: 104857600)) // 100 MB
                     {
-                        await fs.WriteAsync(buffer, 0, bytesRead);
+                        int bytesRead;
+                        while ((bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length)) > 0)
+                        {
+                            await fs.WriteAsync(buffer, 0, bytesRead);
+                        }
                     }
                 }
             }
+            IsLoading = false;
+            FileSelected = true;
+            this.StateHasChanged();
         }
-        IsLoading = false;
-        FileSelected = true;
-        this.StateHasChanged();
+        catch (IOException ex)
+        {
+            HasError = true;
+            IsLoading = false;
+
+            ErrorAlert = ex.Message;
+            this.StateHasChanged();
+        }
     }
 
     private async Task CleanReport()
@@ -182,7 +192,6 @@
         NavManager.LocationChanged += NavManager_LocationChanged;
     }
 
-
     private void NavManager_LocationChanged(object sender, LocationChangedEventArgs e)
     {
         CleanReport();
@@ -198,8 +207,6 @@
         uniqueKeyRemove = Guid.NewGuid().ToString();
         this.StateHasChanged();
     }
-
-
 
     private void ToggleModal()
     {
@@ -247,34 +254,35 @@
     {
         IsViewLoading = true;
         this.StateHasChanged();
+        string jsonFileName = SuccessAlert;
 
         DateTime now = DateTime.Now;
-        MassExctracter massExctracter = new MassExctracter();
+        MassExctracter massExctracter = new MassExctracter(jsonFileName);
         var titleMess = massExctracter.CountTitle();
 
-        int countTableHeader = massExctracter.CountElementsTable().Item1;
         int countHeader = massExctracter.CountElementsTable().Item2;
+        int countTableHeader = massExctracter.CountElementsTable().Item1;
 
-        string textTableHeader = string.Join("br/", massExctracter.CountElementsTable().Item3);
-        string textHeader = string.Join("br/", massExctracter.CountElementsTable().Item4);
+        string textTableHeader = string.Join("<br/><hr/>", massExctracter.CountElementsTable().Item3);
+        string textHeader = string.Join("<br/><hr/>", massExctracter.CountElementsTable().Item4);
 
         int countCheckBox = massExctracter.CountElementsCheckBox().Item1;
-        string textCheckBox = string.Join("br/", massExctracter.CountElementsCheckBox().Item2);
+        string textCheckBox = string.Join("<br/><hr/>", massExctracter.CountElementsCheckBox().Item2);
 
         string fileName = _fileName;
         string fileSize = _fileSize;
         string dateTime = now.ToString();
         int countParagraph = massExctracter.CountElementsSectionParagraph().Item1;
-        string textParagraph = string.Join("<br/>", massExctracter.CountElementsSectionParagraph().Item2);
+        string textParagraph = string.Join("<br/><hr/>", massExctracter.CountElementsSectionParagraph().Item2);
 
         int countTable = massExctracter.GetSectionTable().Item1;
         int countTableParagCount = massExctracter.GetSectionTable().Item2;
         int countTableRow = massExctracter.GetSectionTable().Item3;
         int countTableBulletPoint = massExctracter.GetSectionTable().Item4;
 
-        string tableTextParagList = string.Join("<br/>", massExctracter.GetSectionTable().Item5);
-        string tableTextRowList = string.Join("<br/>", massExctracter.GetSectionTable().Item6);
-        string tableTextBulletPointList = string.Join("<br/>", massExctracter.GetSectionTable().Item7);
+        string tableTextParagList = string.Join("<br/><hr/>", massExctracter.GetSectionTable().Item5);
+        string tableTextRowList = string.Join("<br/><hr/>", massExctracter.GetSectionTable().Item6);
+        string tableTextBulletPointList = string.Join("<br/><hr/>", massExctracter.GetSectionTable().Item7);
 
 
         GeneratorPDF generatorPDF = new GeneratorPDF();
@@ -284,9 +292,11 @@
 
         string outputPath = JsonHelper.ReportPathName(env.WebRootPath, uniqueKeyForPAth).Item1;
 
-        await generatorPDF.GenerateрHTMLFromTitle(titleMess,
-          countTableHeader,
+        await generatorPDF.GenerateрHTMLFromTitle(
+          jsonFileName,
+          titleMess,
           countHeader,
+          countTableHeader,
           textTableHeader,
           textHeader,
           countCheckBox,

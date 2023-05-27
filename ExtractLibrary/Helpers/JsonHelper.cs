@@ -53,10 +53,10 @@ namespace SpecFlowPdfReader.Helpers
             return FolderPath;
         }
 
-        public static string GetJsonFile()
+        public static string GetJsonFile(string jsonFileName)
         {
             string currentDirectory = Directory.GetCurrentDirectory();
-            string JsonPath = Path.Combine(currentDirectory, "JsonResults", "structuredData.json");
+            string JsonPath = Path.Combine(currentDirectory, "JsonResults", jsonFileName);
 
             Console.WriteLine($"JSON file path: {JsonPath}");
             return JsonPath;
