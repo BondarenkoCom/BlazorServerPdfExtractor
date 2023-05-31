@@ -60,37 +60,37 @@
     <div class="button-row">
         <div class="info-compare-container">
             <button class="btn btn-info" @onclick="ToggleModal">Info</button>
-            <button class="btn btn-primary" @onclick="ComparePDFfiles" disabled="@IsCompare">Compare PDF</button>
+            <button class="btn btn-primary" @onclick="ComparePDFfiles" disabled="@(!isFile1Uploaded || !isFile2Uploaded || IsCompare)">Compare PDF</button>
         </div>
-        <button class="btn btn-danger" @onclick="CleanReport">Clean report</button>
-        <button class="btn btn-danger" @onclick="CleanJson">Clean JsonFile</button>
+        <button class="btn btn-danger" @onclick="CleanReport" disabled="@IsCompare">Clean report</button>
+        <button class="btn btn-danger" @onclick="CleanJson" disabled="@IsCompare">Clean JsonFile</button>
     </div>
 </div>
 
 @if (HasSuccess)
 {
-    <div class="alert alert-success" role="alert">
+    <div class="alert alert-success" role="alert" style="margin-top: 60px;">
         Operation was successful!
     </div>
 }
 
 @if (IsLoading)
 {
-    <div class="alert alert-primary" role="alert">
+    <div class="alert alert-primary" role="alert" style="margin-top: 60px;">
         Uploading...
     </div>
 }
 
 @if (IsCompare)
 {
-    <div class="alert alert-primary" role="alert">
+    <div class="alert alert-primary" role="alert" style="margin-top: 60px;">
         Comparing...
     </div>
 }
 
 @if (HasError)
 {
-    <div class="alert alert-danger" role="alert">
+    <div class="alert alert-danger" role="alert" style="margin-top: 60px;">
         @ErrorAlert
     </div>
 }
@@ -133,6 +133,7 @@
     private string SuccessAlert { get; set; }
     private string SuccessAlertSecond { get; set; }
     private string ModalClass { get; set; } = "modal-hidden";
+    private bool isRendering = false;
 
     private async void ComparePDFfiles()
     {
@@ -148,7 +149,7 @@
         try
         {
             IsCompare = true;
-            this.StateHasChanged();
+            await InvokeAsync(StateHasChanged);
 
             ExtractPDF extractPDFCopyFirst = new ExtractPDF();
             var resultFirst = await extractPDFCopyFirst.ExtractTextFromPDFForCompare(pdfNameFirst);
@@ -171,7 +172,7 @@
             {
                 isFile2Extracted = true;
                 HasSuccess = true;  // Set success to true
-                SuccessAlertSecond = resultSecond.Item1;  // Update SuccessAlert to the successful file path
+                SuccessAlertSecond = resultSecond.Item1;
                 await InvokeAsync(StateHasChanged);
             }
             else
@@ -248,16 +249,16 @@
                 }
 
                 pdfSrc = uniqueKeyForPAth;
-                this.StateHasChanged();
+                await InvokeAsync(StateHasChanged);
             }
             IsCompare = false;
-            this.StateHasChanged();
+            await InvokeAsync(StateHasChanged);
         }
         catch (Exception ex)
         {
             MyText = $"Error: {ex.Message}";
             IsCompare = false;
-            this.StateHasChanged();
+            await InvokeAsync(StateHasChanged);
         }
     }
 
@@ -325,10 +326,10 @@
         NavManager.LocationChanged -= NavManager_LocationChanged;
     }
 
-    private void RemoveIframeSource()
+    private async Task RemoveIframeSource()
     {
         uniqueKey = Guid.NewGuid().ToString();
-        this.StateHasChanged();
+        await InvokeAsync(StateHasChanged);
     }
 
     private async Task OnFileSelected(InputFileChangeEventArgs e, int copyNumber)
@@ -338,7 +339,8 @@
         selectedFiles = e.GetMultipleFiles();
 
         IsLoading = true;
-        this.StateHasChanged();
+        await InvokeAsync(StateHasChanged);
+
 
         foreach (var file in selectedFiles)
         {
@@ -388,7 +390,7 @@
             }
         }
         IsLoading = false;
-        this.StateHasChanged();
+        await InvokeAsync(StateHasChanged);
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)

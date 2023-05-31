@@ -43,44 +43,41 @@
             <button class="btn btn-info" @onclick="ToggleModal">Info</button>
             <button class="btn btn-primary" @onclick="ButtonClicked" disabled=@(!FileSelected || IsExtracting )>Extract Images</button>
         </div>
-        <button class="btn btn-danger" @onclick="CleanImagesFolder">Clean image folder</button>
-    </div>
-    <div>
-        <textarea class="form-control text-area-spacing" rows="1" cols="40" @bind="MyText"></textarea>
+        <button class="btn btn-danger" @onclick="CleanImagesFolder" disabled = "@IsExtracting">Clean image folder</button>
     </div>
 </div>
 
 @if (HasSuccess)
 {
-    <div class="alert alert-success" role="alert">
+    <div class="alert alert-success" role="alert" style="margin-top: 60px;">
         Operation was successful! File saved to: @SuccessAlert
     </div>
 }
 
 @if (IsLoading)
 {
-    <div class="alert alert-primary" role="alert">
+    <div class="alert alert-primary" role="alert" style="margin-top: 60px;">
         Uploading...
     </div>
 }
 
 @if (IsExtracting)
 {
-    <div class="alert alert-primary" role="alert">
+    <div class="alert alert-primary" role="alert" style="margin-top: 60px;">
         Extracting...
     </div>
 }
 
 @if (HasError)
 {
-    <div class="alert alert-danger" role="alert">
+    <div class="alert alert-danger" role="alert" style="margin-top: 60px;">
         @ErrorAlert
     </div>
 }
 
 @if (ImageExtractSuccess && !IsLoading && !IsExtracting)
 {
-    <div class="alert alert-success" role="alert">
+    <div class="alert alert-success" role="alert" style="margin-top: 60px;">
         Extract image successful!
     </div>
 }
@@ -116,7 +113,7 @@
         selectedFiles = e.GetMultipleFiles();
 
         IsLoading = true;
-        this.StateHasChanged();
+        await InvokeAsync(StateHasChanged);
 
         foreach (var file in selectedFiles)
         {
@@ -144,12 +141,11 @@
                     await fs.WriteAsync(buffer, 0, bytesRead);
                 }
             }
-
             fs.Close();
         }
         IsLoading = false;
         FileSelected = true;
-        this.StateHasChanged();
+        await InvokeAsync(StateHasChanged);
     }
 
     private async void CleanImagesFolder()
@@ -188,10 +184,10 @@
         ModalClass = ModalClass == "modal-hidden" ? "modal-visible" : "modal-hidden";
     }
 
-    private void RemoveIframeSource()
+    private async Task RemoveIframeSource()
     {
         uniqueKey = Guid.NewGuid().ToString();
-        this.StateHasChanged(); // Update component
+        await InvokeAsync(StateHasChanged);
     }
 
     private async void ButtonClicked()
@@ -203,7 +199,7 @@
         try
         {
             IsExtracting = true;
-            this.StateHasChanged();
+            await InvokeAsync(StateHasChanged);
 
             ExtractImageFromPDF extractImageFromPDF = new ExtractImageFromPDF();
             var imageResult = await extractImageFromPDF.ExtractImagesFromPDF(pdfName);
@@ -222,8 +218,7 @@
 
             IsExtracting = false;
             ViewButtonEnabled = true; // Update the property here
-            this.StateHasChanged();
-
+            await InvokeAsync(StateHasChanged);
         }
         catch (Exception ex)
         {

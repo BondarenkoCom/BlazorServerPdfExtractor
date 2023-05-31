@@ -74,51 +74,52 @@
     <div class="button-row">
         <div class="info-compare-container">
             <button class="btn btn-info" @onclick="ToggleModal">Info</button>
-            <button class="btn btn-primary" @onclick="ComparePDFfiles" disabled="@IsCompare">Compare PDF</button>
+            <button class="btn btn-primary" @onclick="ComparePDFfiles" disabled="@(!isFile1Uploaded || !isFile2Uploaded || !isFile3Uploaded || IsCompare)">Compare PDF</button>
         </div>
-        <button class="btn btn-danger" @onclick="CleanReport">Clean report</button>
-        <button class="btn btn-danger" @onclick="CleanJson">Clean JsonFile</button>
+        <button class="btn btn-danger" @onclick="CleanReport" disabled="@IsCompare">Clean report</button>
+        <button class="btn btn-danger" @onclick="CleanJson" disabled="@IsCompare">Clean JsonFile</button>
+
     </div>
 </div>
 
 @if (HasSuccess)
 {
-    <div class="alert alert-success success-message" role="alert">
+    <div class="alert alert-success" role="alert" style="margin-top: 60px;">
         Operation was successful!
     </div>
 }
 
 @if (Report == "No differences found among the three PDF files.")
 {
-    <div class="alert alert-success" role="alert">
+    <div class="alert alert-success" role="alert" style="margin-top: 60px;">
         @Report
     </div>
 }
 
 @if (IsLoading)
 {
-    <div class="alert alert-primary" role="alert">
+    <div class="alert alert-primary" role="alert" style="margin-top: 60px;">
         Uploading...
     </div>
 }
 
 @if (IsCompare)
 {
-    <div class="alert alert-primary" role="alert">
+    <div class="alert alert-primary" role="alert" style="margin-top: 60px;">
         Comparing...
     </div>
 }
 
 @if (HasError)
 {
-    <div class="alert alert-danger" role="alert">
+    <div class="alert alert-danger" role="alert" style="margin-top: 60px;">
         @ErrorAlert
     </div>
 }
 
 @if (Report == "Passed" && !IsLoading && !IsCompare)
 {
-    <div class="alert alert-success" role="alert">
+    <div class="alert alert-success" role="alert" style="margin-top: 60px;">
         No differences were found in the compared PDFs.
     </div>
 }
@@ -180,7 +181,7 @@
         try
         {
             IsCompare = true;
-            this.StateHasChanged();
+            await InvokeAsync(StateHasChanged);
 
             ExtractPDF extractPDFCopyFirst = new ExtractPDF();
             var resultFirst = await extractPDFCopyFirst.ExtractTextFromPDFForCompare(pdfNameFirst);
@@ -301,16 +302,17 @@
                     Console.WriteLine($"Error message - {ex.Message}");
                 }
                 pdfSrc = uniqueKeyForPAth;
-                this.StateHasChanged();
+                await InvokeAsync(StateHasChanged);
+
             }
             IsCompare = false;
-            this.StateHasChanged();
+            await InvokeAsync(StateHasChanged);
         }
         catch (Exception ex)
         {
             MyText = $"Error: {ex.Message}";
             IsCompare = false;
-            this.StateHasChanged();
+            await InvokeAsync(StateHasChanged);
         }
     }
 
@@ -363,10 +365,10 @@
         }
     }
 
-    private void RemoveIframeSource()
+    private async Task RemoveIframeSource()
     {
         uniqueKey = Guid.NewGuid().ToString();
-        this.StateHasChanged();
+        await InvokeAsync(StateHasChanged);
     }
 
     protected override void OnInitialized()
@@ -391,7 +393,7 @@
         selectedFiles = e.GetMultipleFiles();
 
         IsLoading = true;
-        this.StateHasChanged();
+        await InvokeAsync(StateHasChanged);
 
         foreach (var file in selectedFiles)
         {
@@ -446,7 +448,7 @@
             }
         }
         IsLoading = false;
-        this.StateHasChanged();
+        await InvokeAsync(StateHasChanged);
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)

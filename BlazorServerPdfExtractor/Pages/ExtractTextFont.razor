@@ -20,45 +20,42 @@
         </div>
         <input id="fontType" type="text" @bind="FontType" placeholder="Enter Font Type" class="form-control">
         <button class="btn btn-primary" @onclick="ButtonClicked" disabled=@(!FileSelected || IsExtracting)>Extract Text</button>
-        <button class="btn btn-success" @onclick="GeneratePDFreport" disabled="@(!ViewButtonEnabled)">View</button>
-        <button class="btn btn-danger" @onclick="CleanReport">Clean report</button>
-    </div>
-    <div>
-        <textarea class="form-control" rows="1" cols="70" @bind="MyText"></textarea>
+        <button class="btn btn-success" @onclick="GeneratePDFreport" disabled="@IsExtracting">View</button>
+        <button class="btn btn-danger" @onclick="CleanReport" disabled="@IsExtracting">Clean report</button>
     </div>
 </div>
 
 @if (HasSuccess)
 {
-    <div class="alert alert-success" role="alert">
+    <div class="alert alert-success" role="alert" style="margin-top: 60px;">
         Operation was successful! File saved to: @SuccessAlert
     </div>
 }
 
 @if (IsLoading)
 {
-    <div class="alert alert-primary" role="alert">
+    <div class="alert alert-primary" role="alert" style="margin-top: 60px;">
         Uploading...
     </div>
 }
 
 @if (IsExtracting)
 {
-    <div class="alert alert-primary" role="alert">
+    <div class="alert alert-primary" role="alert" style="margin-top: 60px;">
         Extracting...
     </div>
 }
 
 @if (IsViewLoading)
 {
-    <div class="alert alert-primary" role="alert">
+    <div class="alert alert-primary" role="alert" style="margin-top: 60px;">
         Loading report...
     </div>
 }
 
 @if (HasError)
 {
-    <div class="alert alert-danger" role="alert">
+    <div class="alert alert-danger" role="alert" style="margin-top: 60px;">
         @ErrorAlert
     </div>
 }
@@ -78,6 +75,7 @@
     private string uniqueKey { get; set; } = Guid.NewGuid().ToString();
     private string _fileName;
     private string _fileSize;
+    private string _fileNamePDF;
     private string _reportPath;
     private bool FileSelected { get; set; } = false;
     private string _tempFoldePath;
@@ -97,11 +95,12 @@
             selectedFiles = e.GetMultipleFiles();
 
             IsLoading = true;
-            this.StateHasChanged();
+            await InvokeAsync(StateHasChanged);
 
             foreach (var file in selectedFiles)
             {
                 var uniqueFileName = file.Name + "_" + Guid.NewGuid().ToString() + Path.GetExtension(file.Name);
+                await JSRuntime.InvokeVoidAsync("saveFileName", file.Name);
                 var path = $"{targetFolderPath}\\{uniqueFileName}";
                 FilePath = path;
                 _fileName = uniqueFileName;
@@ -124,14 +123,14 @@
             }
             IsLoading = false;
             FileSelected = true;
-            this.StateHasChanged();
+            await InvokeAsync(StateHasChanged);
         }
         catch (Exception ex)
         {
             HasError = true;
             IsLoading = false;
             ErrorAlert = ex.Message;
-            this.StateHasChanged();
+            await InvokeAsync(StateHasChanged);
         }
     }
 
@@ -172,7 +171,7 @@
         {
             HasError = true;
             ErrorAlert = ex.Message;
-            this.StateHasChanged();
+            await InvokeAsync(StateHasChanged);
         }
     }
 
@@ -192,10 +191,10 @@
         CleanReport().Wait();
     }
 
-    private void RemoveIframeSource()
+    private async Task RemoveIframeSource()
     {
         uniqueKey = Guid.NewGuid().ToString();
-        this.StateHasChanged();
+        await InvokeAsync(StateHasChanged);
     }
 
     private async Task ButtonClicked()
@@ -207,7 +206,7 @@
         {
 
             IsExtracting = true;
-            this.StateHasChanged();
+            await InvokeAsync(StateHasChanged);
 
             ExtractPDF extractPDF = new ExtractPDF();
             var result = await extractPDF.ExtractTextFromPDF(pdfName);
@@ -222,11 +221,13 @@
                 SuccessAlert = result.Item2;
                 HasSuccess = true;
                 HasError = false;
+
+                await JSRuntime.InvokeVoidAsync("localStorage.setItem", "jsonPath", SuccessAlert);
             }
 
             IsExtracting = false;
             ViewButtonEnabled = true;
-            this.StateHasChanged();
+            await InvokeAsync(StateHasChanged);
         }
         catch (Exception ex)
         {
@@ -239,16 +240,29 @@
         try
         {
             IsViewLoading = true;
-            this.StateHasChanged();
+            await InvokeAsync(StateHasChanged);
 
             DateTime now = DateTime.Now;
             string dateTime = now.ToString();
 
-            string jsonFileName = SuccessAlert;
+            string jsonFileName = string.IsNullOrEmpty(SuccessAlert)
+           ? await JSRuntime.InvokeAsync<string>("getJsonPath")
+           : SuccessAlert;
+
+            if (string.IsNullOrEmpty(jsonFileName))
+            {
+                throw new Exception("Json file name is not provided");
+            }
+            _fileName = jsonFileName;
+            _fileSize = new FileInfo(jsonFileName).Length.ToString();
+
             MassExctracter massExctracter = new MassExctracter(jsonFileName);
-            
+
             int countFonts = massExctracter.CountElementFont(FontType).Item1;
             var textFontsType = string.Join("<hr/>", massExctracter.CountElementFont(FontType).Item2);
+
+            await JSRuntime.InvokeVoidAsync("localStorage.setItem", "fontType", FontType);
+
             string textByFonts = FontType;
 
             GeneratorPDF generatorPDF = new GeneratorPDF();
@@ -257,32 +271,42 @@
             await JSRuntime.InvokeVoidAsync("savePdfSrc", uniqueKeyForPAth);
 
             IsLoading = true;
-            this.StateHasChanged();
+            await InvokeAsync(StateHasChanged);
 
-            string outputPath = JsonHelper.ReportPathName(env.WebRootPath, uniqueKeyForPAth).Item1;
+            _fileNamePDF = await JSRuntime.InvokeAsync<string>("getFileName");
 
-            generatorPDF.GenerateHtmlFromFont(
-                jsonFileName,
-                _fileName,
-                _fileSize,
-                dateTime,
-                countFonts,
-                textFontsType,
-                textByFonts,
-                outputPath);
+            if (env.WebRootPath != null && uniqueKeyForPAth != null)
+            {
+                string outputPath = JsonHelper.ReportPathName(env.WebRootPath, uniqueKeyForPAth).Item1;
+
+                generatorPDF.GenerateHtmlFromFont(
+                    jsonFileName,
+                    _fileNamePDF,
+                    _fileSize,
+                    dateTime,
+                    countFonts,
+                    textFontsType,
+                    textByFonts,
+                    outputPath);
+            }
+            else
+            {
+                throw new Exception("WebRootPath or uniqueKeyForPAth is null");
+            }
 
             pdfSrc = uniqueKeyForPAth;
-            this.StateHasChanged();
+            await InvokeAsync(StateHasChanged);
             uniqueKey = Guid.NewGuid().ToString();
-            this.StateHasChanged();
+            await InvokeAsync(StateHasChanged);
             IsViewLoading = false;
-            this.StateHasChanged();
+            await InvokeAsync(StateHasChanged);
+
         }
         catch (Exception ex)
         {
             HasError = true;
             ErrorAlert = ex.Message;
-            this.StateHasChanged();
+            await InvokeAsync(StateHasChanged);
         }
     }
 
@@ -395,7 +419,7 @@
     }
 
     .pdf-frame {
-        margin-top: 50px;
+        margin-top: 70px;
         border: 5px solid #007bff;
         border-radius: 15px;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);

@@ -10,3 +10,19 @@
 window.savePdfSrc = (pdfSrc) => {
     localStorage.setItem('pdfSrc', pdfSrc);
 }
+
+window.saveJsonPath = (jsonPath) => {
+    localStorage.setItem('jsonPath', jsonPath);
+}
+
+window.getJsonPath = () => {
+    return localStorage.getItem('jsonPath');
+}
+
+window.saveFileName = (fileName) => {
+    localStorage.setItem('fileName', fileName);
+}
+
+window.getFileName = () => {
+    return localStorage.getItem('fileName');
+}

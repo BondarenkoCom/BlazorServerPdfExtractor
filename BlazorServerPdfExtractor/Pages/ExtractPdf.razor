@@ -31,42 +31,39 @@
         <button class="btn btn-success" @onclick="GeneratePDFreport" disabled="@(!ViewButtonEnabled)">View</button>
         <button class="btn btn-danger" @onclick="CleanReport">Clean report</button>
     </div>
-    <div>
-        <textarea class="form-control text-area-spacing" rows="1" cols="40" @bind="MyText"></textarea>
-    </div>
 </div>
 
 @if (HasSuccess)
 {
-    <div class="alert alert-success" role="alert">
+    <div class="alert alert-success" role="alert" style="margin-top: 60px;">
         Operation was successful! File saved to: @SuccessAlert
     </div>
 }
 
 @if (IsLoading)
 {
-    <div class="alert alert-primary" role="alert">
+    <div class="alert alert-primary" role="alert" style="margin-top: 60px;">
         Uploading...
     </div>
 }
 
 @if (IsExtracting)
 {
-    <div class="alert alert-primary" role="alert">
+    <div class="alert alert-primary" role="alert" style="margin-top: 60px;">
         Extracting...
     </div>
 }
 
 @if (IsViewLoading)
 {
-    <div class="alert alert-primary" role="alert">
+    <div class="alert alert-primary" role="alert" style="margin-top: 60px;">
         Loading report...
     </div>
 }
 
 @if (HasError)
 {
-    <div class="alert alert-danger" role="alert">
+    <div class="alert alert-danger" role="alert" style="margin-top: 60px;">
         @ErrorAlert
     </div>
 }
@@ -108,14 +105,14 @@
             selectedFiles = e.GetMultipleFiles();
 
             IsLoading = true;
-            this.StateHasChanged();
+            await InvokeAsync(StateHasChanged);
 
             foreach (var file in selectedFiles)
             {
                 var uniqueFileName = file.Name + "_" + Guid.NewGuid().ToString() + Path.GetExtension(file.Name);
                 var path = $"{targetFolderPath}\\{uniqueFileName}";
                 FilePath = path;
-               
+
                 _fileName = uniqueFileName;
                 _fileSize = file.Size.ToString();
 
@@ -136,7 +133,7 @@
             }
             IsLoading = false;
             FileSelected = true;
-            this.StateHasChanged();
+            await InvokeAsync(StateHasChanged);
         }
         catch (IOException ex)
         {
@@ -144,7 +141,7 @@
             IsLoading = false;
 
             ErrorAlert = ex.Message;
-            this.StateHasChanged();
+            await InvokeAsync(StateHasChanged);
         }
     }
 
@@ -202,10 +199,10 @@
         NavManager.LocationChanged -= NavManager_LocationChanged;
     }
 
-    private void RemoveIframeSource()
+    private async Task RemoveIframeSource()
     {
-        uniqueKeyRemove = Guid.NewGuid().ToString();
-        this.StateHasChanged();
+        uniqueKey = Guid.NewGuid().ToString();
+        await InvokeAsync(StateHasChanged);
     }
 
     private void ToggleModal()
@@ -222,7 +219,7 @@
         try
         {
             IsExtracting = true;
-            this.StateHasChanged();
+            await InvokeAsync(StateHasChanged);
 
             ExtractPDF extractPDF = new ExtractPDF();
             var result = await extractPDF.ExtractTextFromPDF(pdfName);
@@ -241,8 +238,7 @@
 
             IsExtracting = false;
             ViewButtonEnabled = true;
-            this.StateHasChanged();
-
+            await InvokeAsync(StateHasChanged);
         }
         catch (Exception ex)
         {
@@ -253,7 +249,8 @@
     private async void GeneratePDFreport()
     {
         IsViewLoading = true;
-        this.StateHasChanged();
+        await InvokeAsync(StateHasChanged);
+
         string jsonFileName = SuccessAlert;
 
         DateTime now = DateTime.Now;
@@ -316,9 +313,9 @@
           outputPath);
 
         pdfSrc = uniqueKeyForPAth;
-        this.StateHasChanged();
+        await InvokeAsync(StateHasChanged);
         IsViewLoading = false;
-        StateHasChanged();
+        await InvokeAsync(StateHasChanged);
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -409,7 +406,7 @@
     }
 
     .pdf-frame {
-        margin-top: 50px;
+        margin-top: 70px;
         border: 5px solid #007bff;
         border-radius: 15px;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
