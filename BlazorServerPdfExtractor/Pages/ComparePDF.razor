@@ -67,6 +67,14 @@
     </div>
 </div>
 
+
+@if (!string.IsNullOrEmpty(MyText))
+{
+    <div style="margin-top: 60px; padding: 15px; color: #721c24; background-color: #f8d7da; border-color: #f5c6cb; border-radius: .25rem;">
+        Error: @MyText
+    </div>
+}
+
 @if (HasSuccess)
 {
     <div class="alert alert-success" role="alert" style="margin-top: 60px;">
@@ -140,8 +148,6 @@
         DateTime now = DateTime.Now;
         string pdfNameFirst = FilePathCopyFirst;
         string pdfNameSecond = FilePathCopySecond;
-        MyText = $"{pdfNameFirst} - begin extract first PDF";
-        MyText = $"{pdfNameSecond} - begin extract second PDF";
         string fileNameFirst = _fileNameFirst;
         string fileNameSecond = _fileNameSecond;
         string dateTime = now.ToString();
@@ -181,8 +187,6 @@
             }
 
             Console.WriteLine($"First path - {resultFirst} \nSecond path - {resultSecond}");
-            OutputText = $"First path - {resultFirst} \nSecond path - {resultSecond}";
-
 
             ComparingPDF comparingPDF = new ComparingPDF();
             string mes = "empty";

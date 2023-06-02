@@ -2,6 +2,7 @@
 using Newtonsoft.Json;
 using NUnit.Framework;
 using SpecFlowPdfReader.Helpers;
+using System.Xml;
 
 namespace ExtractLibrary.ExtractFromJson
 {
@@ -102,13 +103,13 @@ namespace ExtractLibrary.ExtractFromJson
             string fontInfo;
             List<string> TextFontList = new List<string>();
             List<string> TextFontTypeList = new List<string>();
-
+        
             foreach (var textFontElement in myDeserializedClass.elements.Where(e => e.TextSize != 0))
             {
                 try
                 {
                     fontInfo = textFontElement.Font.font_type.ToString();
-
+        
                     fontTypeCount++;
                     //"TrueType"
                     if (fontInfo == FontType)
@@ -122,10 +123,9 @@ namespace ExtractLibrary.ExtractFromJson
                     continue;
                 }
             }
-
+        
             return (fontTypeCount, TextFontList, TextFontTypeList);
         }
-
 
         public (int, List<string>) CountElementsSectionParagraph()
         {
@@ -150,7 +150,7 @@ namespace ExtractLibrary.ExtractFromJson
             }
             return (paragCount, TextParagList);
         }
-        
+
         public (int, int, int, int, List<string>, List<string>, List<string>) GetSectionTable()
         {
             string jsonContent = File.ReadAllText(jsonResut);
@@ -160,7 +160,7 @@ namespace ExtractLibrary.ExtractFromJson
             int tableParagCount = 0;
             int tableRow = 0;
             int tableBulletPoint = 0;
-            
+
             List<string> tableTextParagList = new List<string>();
             List<string> tableTextRowList = new List<string>();
             List<string> tableTextBulletPointList = new List<string>();

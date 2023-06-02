@@ -32,6 +32,13 @@
     </div>
 }
 
+@if (!string.IsNullOrEmpty(MyText))
+{
+    <div style="margin-top: 60px; padding: 15px; color: #721c24; background-color: #f8d7da; border-color: #f5c6cb; border-radius: .25rem;">
+        Error: @MyText
+    </div>
+}
+
 @if (IsLoading)
 {
     <div class="alert alert-primary" role="alert" style="margin-top: 60px;">
@@ -200,7 +207,6 @@
     private async Task ButtonClicked()
     {
         string pdfName = FilePath;
-        MyText = $"{pdfName} - begin extract";
 
         try
         {
@@ -280,14 +286,14 @@
                 string outputPath = JsonHelper.ReportPathName(env.WebRootPath, uniqueKeyForPAth).Item1;
 
                 generatorPDF.GenerateHtmlFromFont(
-                    jsonFileName,
-                    _fileNamePDF,
-                    _fileSize,
-                    dateTime,
-                    countFonts,
-                    textFontsType,
-                    textByFonts,
-                    outputPath);
+                        jsonFileName,
+                        _fileNamePDF,
+                        _fileSize,
+                        dateTime,
+                        countFonts,
+                        textFontsType,
+                        textByFonts,
+                        outputPath);
             }
             else
             {

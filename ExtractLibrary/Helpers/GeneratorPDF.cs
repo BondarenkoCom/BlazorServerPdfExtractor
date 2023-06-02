@@ -12,6 +12,7 @@
             string? textFont,
             string? outputPath)
         {
+
             if (string.IsNullOrEmpty(fileName))
             {
                 fileName = "empty";
@@ -25,6 +26,8 @@
             {
                 fileName = fileName.Substring(0, fileName.IndexOf("_"));
             }
+
+            string xmlContent = textFontType.Replace("<hr/>", "\n\n").Replace("<", "&lt;").Replace(">", "&gt;");
 
             string htmlContent = $@"
                     <html>
@@ -65,6 +68,7 @@
                             <ul>
                                 <hr/>
                                 <li>Text fonts: <br/>{textFontType}</li>
+                                <li>Xml nodes: <p><pre>{xmlContent}</pre></p></li>
                             </ul>
                         </body>
                     </html>";
@@ -269,13 +273,13 @@
                     <body>
                         <h1 style='color: green; background-color: #e8f5e9;'>First file: {titleFirst}</h1>
                         <h1 style='color: blue; background-color: #e3f2fd;'>Second file: {titleSecond}</h1>";
-                
-                                if (titleThird != "Nothing")
-                                {
-                                    htmlContent += $"<h1 style='color: red; background-color: #ffebee;'>Third file: {titleThird}</h1>";
-                                }
-                
-                                htmlContent += $@"
+
+                if (titleThird != "Nothing")
+                {
+                    htmlContent += $"<h1 style='color: red; background-color: #ffebee;'>Third file: {titleThird}</h1>";
+                }
+
+                htmlContent += $@"
                         <h2>{date}</h2>
                         {difference}
                     </body>

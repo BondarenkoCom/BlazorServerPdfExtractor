@@ -29,7 +29,7 @@
         <InputFile OnChange="@HandleFileSelected" MaxFileSize="104857600" disabled="@IsExtracting" />
         <button class="btn btn-primary" @onclick="ButtonClicked" disabled=@(!FileSelected || IsExtracting )>Extract Text</button>
         <button class="btn btn-success" @onclick="GeneratePDFreport" disabled="@(!ViewButtonEnabled)">View</button>
-        <button class="btn btn-danger" @onclick="CleanReport">Clean report</button>
+        <button class="btn btn-danger" @onclick="CleanReport" disabled="@IsExtracting">Clean report</button>
     </div>
 </div>
 
@@ -37,6 +37,13 @@
 {
     <div class="alert alert-success" role="alert" style="margin-top: 60px;">
         Operation was successful! File saved to: @SuccessAlert
+    </div>
+}
+
+@if (!string.IsNullOrEmpty(MyText))
+{
+    <div style="margin-top: 60px; padding: 15px; color: #721c24; background-color: #f8d7da; border-color: #f5c6cb; border-radius: .25rem;">
+        Error: @MyText
     </div>
 }
 
@@ -214,7 +221,6 @@
     {
 
         string pdfName = FilePath;
-        MyText = $"{pdfName} - begin extract";
 
         try
         {

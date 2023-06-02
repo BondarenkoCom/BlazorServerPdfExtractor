@@ -89,6 +89,13 @@
     </div>
 }
 
+@if (!string.IsNullOrEmpty(MyText))
+{
+    <div style="margin-top: 60px; padding: 15px; color: #721c24; background-color: #f8d7da; border-color: #f5c6cb; border-radius: .25rem;">
+        Error: @MyText
+    </div>
+}
+
 @if (Report == "No differences found among the three PDF files.")
 {
     <div class="alert alert-success" role="alert" style="margin-top: 60px;">
@@ -170,9 +177,6 @@
         string pdfNameFirst = FilePathCopyFirst;
         string pdfNameSecond = FilePathCopySecond;
         string pdfNameThird = FilePathCopyThird;
-        MyText = $"{pdfNameFirst} - begin extract first PDF";
-        MyText = $"{pdfNameSecond} - begin extract second PDF";
-        MyText = $"{pdfNameThird} - begin extract third PDF";
         string fileNameFirst = _fileNameFirst;
         string fileNameSecond = _fileNameSecond;
         string fileNameThird = _fileNameThird;
